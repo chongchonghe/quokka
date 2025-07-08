@@ -6,28 +6,29 @@ This document lists all of the runtime parameters in Quokka that are set using t
 
 These parameters are read in the ``AMRSimulation<problem_t>::readParameters()`` function in ``src/simulation.hpp``.
 
-| Parameter Name | Type | Description |
-|----|----|----|
-| max_timesteps | Integer | The maximum number of time steps for the simulation. |
-| cfl | Float | Sets the CFL number for the simulation. |
-| amr_interpolation_method | Integer | Selects the method (piecewise constant or piecewise linear with limiters) used to interpolate from coarse to fine AMR levels. Except for debugging, this should not be changed. |
-| stop_time | Float | The simulation time at which to stop evolving the simulation. |
-| ascent_interval | Integer | The number of coarse timesteps between Ascent outputs. |
-| plotfile_interval | Integer | The number of coarse timesteps between plotfile outputs. |
-| plottime_interval | Float | The time interval (in simulated time) between plotfile outputs. |
-| skip_initial_plotfile | Boolean (0/1) | Skip writing the initial plotfile at t=0. Default: 0 (false). |
-| projection_interval | Integer | The number of coarse timesteps between 2D projection outputs. |
-| statistics_interval | Integer | The number of coarse timesteps between statistics outputs. |
-| checkpoint_interval | Float | The number of coarse timesteps between checkpoint outputs. |
-| checkpointtime_interval | Float | The time interval (in simulated time) between checkpoint outputs. |
-| do_reflux | Integer | This turns on refluxing at coarse-fine boundaries (1) or turns it off (0). Except for debugging, this should always be on when AMR is used. |
-| do_tracers | Integer | This turns on tracer particles. They are initialized one-per-cell and they follow the fluid velocity. Default: 0 (off). |
-| suppress_output | Integer | If set to 1, this disables output to stdout while the simulation is running. |
-| derived_vars | String | A list of the names of derived variables that should be included in the plotfile and Ascent outputs. |
-| regrid_interval | Integer | The number of timesteps between AMR regridding. |
-| density_floor | Float | The minimum density value allowed in the simulation. Enforced through EnforceLimits. |
-| temperature_floor | Float | The minimum temperature value allowed in the simulation. Enforced through EnforceLimits. |
-| max_walltime | String | The maximum walltime for the simulation in the format DD:HH:SS (days/hours/seconds). After 90% of this walltime elapses, the simulation will automatically stop and exit. |
+| Parameter Name           | Type          | Description                                                                                                                                                                     |
+|--------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| max_timesteps            | Integer       | The maximum number of time steps for the simulation.                                                                                                                            |
+| cfl                      | Float         | Sets the CFL number for the simulation.                                                                                                                                         |
+| amr_interpolation_method | Integer       | Selects the method (piecewise constant or piecewise linear with limiters) used to interpolate from coarse to fine AMR levels. Except for debugging, this should not be changed. |
+| stop_time                | Float         | The simulation time at which to stop evolving the simulation.                                                                                                                   |
+| ascent_interval          | Integer       | The number of coarse timesteps between Ascent outputs.                                                                                                                          |
+| plotfile_interval        | Integer       | The number of coarse timesteps between plotfile outputs.                                                                                                                        |
+| plottime_interval        | Float         | The time interval (in simulated time) between plotfile outputs.                                                                                                                 |
+| skip_initial_plotfile    | Boolean (0/1) | Skip writing the initial plotfile at t=0. Default: 0 (false).                                                                                                                   |
+| projection_interval      | Integer       | The number of coarse timesteps between 2D projection outputs.                                                                                                                   |
+| statistics_interval      | Integer       | The number of coarse timesteps between statistics outputs.                                                                                                                      |
+| checkpoint_interval      | Float         | The number of coarse timesteps between checkpoint outputs.                                                                                                                      |
+| checkpointtime_interval  | Float         | The time interval (in simulated time) between checkpoint outputs.                                                                                                               |
+| restartfile              | String        | The name of the checkpoint folder to read in. If this is set, the simulation will restart from the specified checkpoint.                                                        |
+| do_reflux                | Integer       | This turns on refluxing at coarse-fine boundaries (1) or turns it off (0). Except for debugging, this should always be on when AMR is used.                                     |
+| do_tracers               | Integer       | This turns on tracer particles. They are initialized one-per-cell and they follow the fluid velocity. Default: 0 (off).                                                         |
+| suppress_output          | Integer       | If set to 1, this disables output to stdout while the simulation is running.                                                                                                    |
+| derived_vars             | String        | A list of the names of derived variables that should be included in the plotfile and Ascent outputs.                                                                            |
+| regrid_interval          | Integer       | The number of timesteps between AMR regridding.                                                                                                                                 |
+| density_floor            | Float         | The minimum density value allowed in the simulation. Enforced through EnforceLimits.                                                                                            |
+| temperature_floor        | Float         | The minimum temperature value allowed in the simulation. Enforced through EnforceLimits.                                                                                        |
+| max_walltime             | String        | The maximum walltime for the simulation in the format DD:HH:SS (days/hours/seconds). After 90% of this walltime elapses, the simulation will automatically stop and exit.       |
 
 ## Hydrodynamics
 
@@ -60,3 +61,18 @@ These parameters are read in the ``RadhydroSimulation<problem_t>::readParmParse(
 | cooling.enabled | Integer | If set to 1, turns on optically-thin radiative cooling as a Strang-split source term. Default: 0 (disabled). |
 | cooling.read_tables_even_if_disabled | Integer | If set to 1, reads the cooling tables even if the cooling module is disabled. |
 | cooling.grackle_data_file | String | The path to the cooling tables in Grackle-compatible HDF5 format. |
+
+## AMR
+
+| Parameter Name | Type | Description |
+|----|----|----|
+| amr.v | Integer | This turns on verbose logging. |
+| amr.n_cell | (Integer, Integer, Integer) | The number of cells in each coordinate direction at level 0. This parameter is required and must be specified as three separate integers. This defines the base domain size of your simulation. |
+| amr.max_level | Integer | The max level of refinement. The number of levels = max_level + 1. Level 0 is the coarsest level. |
+| amr.blocking_factor | Integer | The blocking factor constrains grid creation such that each grid must be divisible by this value. Must be either 1 or a power of 2. Both the domain size (at each level) and max_grid_size must be divisible by blocking_factor. Defaults to 8 in each coordinate direction. This ensures grids are sufficiently coarsenable for good multigrid performance. Can be specified per direction using amr.blocking_factor_x/y/z. |
+| amr.max_grid_size | Integer | The maximum length allowed for a grid in any direction. The domain will be subdivided until no grid is longer than this value in any direction. Defaults to 128 in 2D and 32 in 3D. Can be specified per direction using amr.max_grid_size_x/y/z. Note that this is just an upper bound - grids may be smaller. |
+| amr.n_error_buf | Integer | The number of buffer cells to add around cells tagged for refinement. For example, if set to 3, a 7x7x7 box of cells will be tagged around each cell that meets the refinement criteria. Defaults to 1. This ensures coarse/fine boundaries are not too close to tagged cells. |
+| amr.grid_eff | Float | The grid efficiency threshold (between 0 and 1). Defaults to 0.7 (70%). Used to ensure refined grids don't contain too large a fraction of untagged cells. The gridding algorithm will attempt to satisfy this constraint without violating the blocking_factor criterion. |
+| amr.refine_grid_layout | Integer | Boolean flag (0/1) that defaults to 1 (true). When true, if the number of grids is less than the number of processors, grids will be further subdivided until there are at least as many grids as processors (unless doing so would violate the blocking_factor criterion). |
+
+
