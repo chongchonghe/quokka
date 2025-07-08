@@ -34,45 +34,45 @@ These parameters are read in the ``AMRSimulation<problem_t>::readParameters()`` 
 
 These parameters are read in the ``RadhydroSimulation<problem_t>::readParmParse()`` function in ``src/RadhydroSimulation.hpp``.
 
-| Parameter Name | Type | Description |
-|----|----|----|
-| hydro.low_level_debugging_output | Integer | If set to 1, turns on low-level debugging output for each RK stage. Warning: this writes an enormous volume of data to disk! This should only be used for debugging. Default: 0. |
-| hydro.rk_integrator_order | Integer | Determines the order of the RK integrator used. Can be set to 1 (Forward Euler) or 2 (RK2-SSP, also known as Heun's method). Default: 2. This should only be changed for debugging. |
-| hydro.reconstruction_order | Integer | Determines the order of spatial reconstruction algorithm used. Can be set to 1 (piecewise constant), 2 (piecewise linear; PLM), or 3 (piecewise parabolic; PPM). Default: 3 (PPM). |
-| hydro.use_dual_energy | Integer | If set to 1, the code evolves an auxiliary internal energy variable in order to correctly evolve high-mach flows. This should only be disabled (0) for debugging. Default: 1. |
-| hydro.abort_on_fofc_failure | Integer | If set to 1, the code aborts when first-order flux correction fails to yield a physical state (positive density and pressure). This should only be disabled (0) for debugging. |
-| hydro.artificial_viscosity_coefficient | Float | This is the linear artificial viscosity coefficient used in the artificial viscosity term added to the flux. This is the same parameter as defined in the original PPM paper. Default: 0. |
+| Parameter Name                         | Type    | Description                                                                                                                                                                               |
+|----------------------------------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| hydro.low_level_debugging_output       | Integer | If set to 1, turns on low-level debugging output for each RK stage. Warning: this writes an enormous volume of data to disk! This should only be used for debugging. Default: 0.          |
+| hydro.rk_integrator_order              | Integer | Determines the order of the RK integrator used. Can be set to 1 (Forward Euler) or 2 (RK2-SSP, also known as Heun's method). Default: 2. This should only be changed for debugging.       |
+| hydro.reconstruction_order             | Integer | Determines the order of spatial reconstruction algorithm used. Can be set to 1 (piecewise constant), 2 (piecewise linear; PLM), or 3 (piecewise parabolic; PPM). Default: 3 (PPM).        |
+| hydro.use_dual_energy                  | Integer | If set to 1, the code evolves an auxiliary internal energy variable in order to correctly evolve high-mach flows. This should only be disabled (0) for debugging. Default: 1.             |
+| hydro.abort_on_fofc_failure            | Integer | If set to 1, the code aborts when first-order flux correction fails to yield a physical state (positive density and pressure). This should only be disabled (0) for debugging.            |
+| hydro.artificial_viscosity_coefficient | Float   | This is the linear artificial viscosity coefficient used in the artificial viscosity term added to the flux. This is the same parameter as defined in the original PPM paper. Default: 0. |
 
 ## Radiation
 
 These parameters are read in the ``RadhydroSimulation<problem_t>::readParmParse()`` function in ``src/RadhydroSimulation.hpp``.
 
-| Parameter Name | Type | Description |
-|----|----|----|
+| Parameter Name                 | Type    | Description                                                                                                                                                                        |
+|--------------------------------|---------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | radiation.reconstruction_order | Integer | Determines the order of spatial reconstruction algorithm used. Can be set to 1 (piecewise constant), 2 (piecewise linear; PLM), or 3 (piecewise parabolic; PPM). Default: 3 (PPM). |
-| radiation.cfl | Float | Sets the CFL number for the radiation advance. This is independent of the hydro CFL number. |
+| radiation.cfl                  | Float   | Sets the CFL number for the radiation advance. This is independent of the hydro CFL number.                                                                                        |
 
 ## Optically-thin radiative cooling
 
 These parameters are read in the ``RadhydroSimulation<problem_t>::readParmParse()`` function in ``src/RadhydroSimulation.hpp``.
 
-| Parameter Name | Type | Description |
-|----|----|----|
-| cooling.enabled | Integer | If set to 1, turns on optically-thin radiative cooling as a Strang-split source term. Default: 0 (disabled). |
-| cooling.read_tables_even_if_disabled | Integer | If set to 1, reads the cooling tables even if the cooling module is disabled. |
-| cooling.grackle_data_file | String | The path to the cooling tables in Grackle-compatible HDF5 format. |
+| Parameter Name                       | Type    | Description                                                                                                  |
+|--------------------------------------|---------|--------------------------------------------------------------------------------------------------------------|
+| cooling.enabled                      | Integer | If set to 1, turns on optically-thin radiative cooling as a Strang-split source term. Default: 0 (disabled). |
+| cooling.read_tables_even_if_disabled | Integer | If set to 1, reads the cooling tables even if the cooling module is disabled.                                |
+| cooling.grackle_data_file            | String  | The path to the cooling tables in Grackle-compatible HDF5 format.                                            |
 
 ## AMR
 
-| Parameter Name | Type | Description |
-|----|----|----|
-| amr.v | Integer | This turns on verbose logging. |
-| amr.n_cell | (Integer, Integer, Integer) | The number of cells in each coordinate direction at level 0. This parameter is required and must be specified as three separate integers. This defines the base domain size of your simulation. |
-| amr.max_level | Integer | The max level of refinement. The number of levels = max_level + 1. Level 0 is the coarsest level. |
-| amr.blocking_factor | Integer | The blocking factor constrains grid creation such that each grid must be divisible by this value. Must be either 1 or a power of 2. Both the domain size (at each level) and max_grid_size must be divisible by blocking_factor. Defaults to 8 in each coordinate direction. This ensures grids are sufficiently coarsenable for good multigrid performance. Can be specified per direction using amr.blocking_factor_x/y/z. |
-| amr.max_grid_size | Integer | The maximum length allowed for a grid in any direction. The domain will be subdivided until no grid is longer than this value in any direction. Defaults to 128 in 2D and 32 in 3D. Can be specified per direction using amr.max_grid_size_x/y/z. Note that this is just an upper bound - grids may be smaller. |
-| amr.n_error_buf | Integer | The number of buffer cells to add around cells tagged for refinement. For example, if set to 3, a 7x7x7 box of cells will be tagged around each cell that meets the refinement criteria. Defaults to 1. This ensures coarse/fine boundaries are not too close to tagged cells. |
-| amr.grid_eff | Float | The grid efficiency threshold (between 0 and 1). Defaults to 0.7 (70%). Used to ensure refined grids don't contain too large a fraction of untagged cells. The gridding algorithm will attempt to satisfy this constraint without violating the blocking_factor criterion. |
-| amr.refine_grid_layout | Integer | Boolean flag (0/1) that defaults to 1 (true). When true, if the number of grids is less than the number of processors, grids will be further subdivided until there are at least as many grids as processors (unless doing so would violate the blocking_factor criterion). |
+| Parameter Name         | Type                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|------------------------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| amr.v                  | Integer                     | This turns on verbose logging.                                                                                                                                                                                                                                                                                                                                                                                               |
+| amr.n_cell             | (Integer, Integer, Integer) | The number of cells in each coordinate direction at level 0. This parameter is required and must be specified as three separate integers. This defines the base domain size of your simulation.                                                                                                                                                                                                                              |
+| amr.max_level          | Integer                     | The max level of refinement. The number of levels = max_level + 1. Level 0 is the coarsest level.                                                                                                                                                                                                                                                                                                                            |
+| amr.blocking_factor    | Integer                     | The blocking factor constrains grid creation such that each grid must be divisible by this value. Must be either 1 or a power of 2. Both the domain size (at each level) and max_grid_size must be divisible by blocking_factor. Defaults to 8 in each coordinate direction. This ensures grids are sufficiently coarsenable for good multigrid performance. Can be specified per direction using amr.blocking_factor_x/y/z. |
+| amr.max_grid_size      | Integer                     | The maximum length allowed for a grid in any direction. The domain will be subdivided until no grid is longer than this value in any direction. Defaults to 128 in 2D and 32 in 3D. Can be specified per direction using amr.max_grid_size_x/y/z. Note that this is just an upper bound - grids may be smaller.                                                                                                              |
+| amr.n_error_buf        | Integer                     | The number of buffer cells to add around cells tagged for refinement. For example, if set to 3, a 7x7x7 box of cells will be tagged around each cell that meets the refinement criteria. Defaults to 1. This ensures coarse/fine boundaries are not too close to tagged cells.                                                                                                                                               |
+| amr.grid_eff           | Float                       | The grid efficiency threshold (between 0 and 1). Defaults to 0.7 (70%). Used to ensure refined grids don't contain too large a fraction of untagged cells. The gridding algorithm will attempt to satisfy this constraint without violating the blocking_factor criterion.                                                                                                                                                   |
+| amr.refine_grid_layout | Integer                     | Boolean flag (0/1) that defaults to 1 (true). When true, if the number of grids is less than the number of processors, grids will be further subdivided until there are at least as many grids as processors (unless doing so would violate the blocking_factor criterion).                                                                                                                                                  |
 
 
