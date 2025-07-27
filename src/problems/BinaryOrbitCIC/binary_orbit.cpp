@@ -31,6 +31,7 @@ struct BinaryOrbit {
 
 static bool do_split_particles = false; // NOLINT
 static int split_factor = 8;		// NOLINT
+static std::string particle_file = "../inputs/BinaryOrbit_particles.txt";
 
 template <> struct quokka::EOS_Traits<BinaryOrbit> {
 	static constexpr double gamma = 1.0;	       // isothermal
@@ -83,7 +84,7 @@ template <> void QuokkaSimulation<BinaryOrbit>::createInitialCICParticles()
 	// read particles from ASCII file
 	const int nreal_extra = 4; // mass vx vy vz
 	CICParticles->SetVerbose(1);
-	CICParticles->InitFromAsciiFile("../inputs/BinaryOrbit_particles.txt", nreal_extra, nullptr);
+	CICParticles->InitFromAsciiFile(particle_file, nreal_extra, nullptr);
 
 	// test particle splitting
 	// (this is intended to only be used when restarting at a higher resolution)
@@ -109,7 +110,8 @@ template <> void QuokkaSimulation<BinaryOrbit>::computeAfterTimestep()
 {
 	// every N cycles, save particle statistics at the finest level
 	static int cycle = 1;
-	if (cycle % 10 == 0) {
+	const int save_interval = 4;
+	if (cycle % save_interval == 0) {
 		// get the finest level
 		const int finest_level = finestLevel();
 
@@ -136,13 +138,14 @@ template <> void QuokkaSimulation<BinaryOrbit>::computeAfterTimestep()
 					}
 				}
 
-				const double dist0 = 6.25e12; // cm
-				const amrex::Real cell_dx0 = this->geom[0].CellSize(0);
+				// const double dist0 = 6.25e12; // cm
+				// const amrex::Real cell_dx0 = this->geom[0].CellSize(0);
 
 				// save statistics
 				userData_.time.push_back(tNew_[finest_level]);
-				userData_.dist.push_back((dist - dist0) / cell_dx0);
-				amrex::Print() << "Maximum particle separation: " << dist << " cm, initial separation is " << dist0 << " cm.\n";
+				// userData_.dist.push_back((dist - dist0) / cell_dx0);
+				userData_.dist.push_back(dist);
+				// amrex::Print() << "Maximum particle separation: " << dist << " cm, initial separation is " << dist0 << " cm.\n";
 			}
 		}
 	}
@@ -182,6 +185,7 @@ auto problem_main() -> int
 	amrex::ParmParse const pp("problem");
 	pp.query("do_split_particles", do_split_particles);
 	pp.query("split_factor", split_factor);
+	pp.query("particle_file", particle_file);
 
 	// Problem initialization
 	QuokkaSimulation<BinaryOrbit> sim(BCs_cc);
@@ -202,6 +206,9 @@ auto problem_main() -> int
 	// get the number of particles
 	const int n_particles = sim.particleRegister_.getParticleDescriptor(quokka::ParticleType::CIC)->getNumParticles();
 
+	const double dist0 = 6.25e12; // cm
+	const amrex::Real cell_dx0 = sim.geom[0].CellSize(0);
+
 	int status = 0;
 
 	// check max abs particle distance
@@ -210,10 +217,18 @@ auto problem_main() -> int
 		amrex::Print() << "Number of particles: " << n_particles << "\n";
 
 		if (!sim.userData_.dist.empty()) {
-			auto result = std::max_element(sim.userData_.dist.begin(), sim.userData_.dist.end(),
-						       [](amrex::ParticleReal a, amrex::ParticleReal b) { return std::abs(a) < std::abs(b); });
-			max_err = std::abs(*result);
+			auto result_max = std::max_element(sim.userData_.dist.begin(), sim.userData_.dist.end());
+			auto result_min = std::min_element(sim.userData_.dist.begin(), sim.userData_.dist.end());
+			// max_err = std::abs(*result_max) - std::abs(*result_min);
+			max_err = std::max(std::abs(*result_max - dist0) / cell_dx0, std::abs(*result_min - dist0) / cell_dx0);
 			amrex::Print() << "max deviation from initial particle separation = " << max_err << " cell widths.\n";
+
+			// write dist data to file. Columns: time, dist
+			std::ofstream outfile("dist.txt");
+			for (size_t i = 0; i < sim.userData_.dist.size(); ++i) {
+				outfile << sim.userData_.time[i] << " " << sim.userData_.dist[i] << "\n";
+			}
+			outfile.close();
 		} else {
 			max_err = 1.0;
 			amrex::Print() << "No particles in userData_.dist.\n";
