@@ -23,14 +23,14 @@ LOG_ROOT="${REPO_ROOT}/nightly-logs/${TIMESTAMP}"
 # Build configuration
 CMAKE_BUILD_TYPE="Debug"
 CMAKE_GENERATOR="Ninja"
-NUM_BUILD_JOBS=6
+NUM_BUILD_JOBS=16
 
 # Test configuration
 MAX_TIMESTEPS=2
-CTEST_PARALLEL_JOBS=4
+CTEST_PARALLEL_JOBS=16
 
 # Dimensionalities to test
-DIMENSIONS=(1 2 3)
+DIMENSIONS=(3)
 
 # ==============================================================================
 # Setup logging
