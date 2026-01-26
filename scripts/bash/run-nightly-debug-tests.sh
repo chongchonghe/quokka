@@ -6,10 +6,47 @@
 # with max_timesteps=2 for quick validation. Logs and artifacts are organized
 # by timestamp for historical tracking.
 #
-# Usage: ./run-nightly-debug-tests.sh
+# Usage: 
+#   ./run-nightly-debug-tests.sh [OPTIONS]
+#
+# Options:
+#   --incremental    Keep existing build folders and do incremental builds
+#   -h, --help       Show this help message
 #
 
 set -euo pipefail
+
+# ==============================================================================
+# Parse command-line arguments
+# ==============================================================================
+
+INCREMENTAL_BUILD=false
+
+while [[ $# -gt 0 ]]; do
+	case $1 in
+		--incremental)
+			INCREMENTAL_BUILD=true
+			shift
+			;;
+		-h|--help)
+			echo "Usage: $0 [OPTIONS]"
+			echo ""
+			echo "Options:"
+			echo "  --incremental    Keep existing build folders and do incremental builds"
+			echo "  -h, --help       Show this help message"
+			echo ""
+			echo "Description:"
+			echo "  Runs Quokka debug tests with max_timesteps=2 for crash detection."
+			echo "  By default, performs clean builds. Use --incremental for faster iteration."
+			exit 0
+			;;
+		*)
+			echo "Unknown option: $1"
+			echo "Use --help for usage information"
+			exit 1
+			;;
+	esac
+done
 
 # ==============================================================================
 # Configuration
@@ -52,6 +89,7 @@ echo "Started at: $(date)"
 echo "Repository: ${REPO_ROOT}"
 echo "Log directory: ${LOG_ROOT}"
 echo "Build type: ${CMAKE_BUILD_TYPE}"
+echo "Build mode: $([ "${INCREMENTAL_BUILD}" = true ] && echo "Incremental" || echo "Clean")"
 echo "Max timesteps: ${MAX_TIMESTEPS}"
 echo "Dimensions to test: ${DIMENSIONS[*]}"
 echo "=============================================================================="
@@ -136,29 +174,37 @@ for DIM in "${DIMENSIONS[@]}"; do
 	# --------------------------------------------------
 	# Configure
 	# --------------------------------------------------
-	log_info "Configuring ${DIM}D build..."
-	
-	if [ -d "${BUILD_DIR}" ]; then
-		log_info "Removing existing build directory: ${BUILD_DIR}"
-		rm -rf "${BUILD_DIR}"
+	if [ "${INCREMENTAL_BUILD}" = true ] && [ -d "${BUILD_DIR}" ]; then
+		log_info "Using existing build directory for incremental build: ${BUILD_DIR}"
+	else
+		if [ -d "${BUILD_DIR}" ]; then
+			log_info "Removing existing build directory: ${BUILD_DIR}"
+			rm -rf "${BUILD_DIR}"
+		fi
+		mkdir -p "${BUILD_DIR}"
+		log_info "Configuring ${DIM}D build..."
 	fi
 	
-	mkdir -p "${BUILD_DIR}"
-	
-	CMAKE_CMD="cmake \
-		-S ${REPO_ROOT} \
-		-B ${BUILD_DIR} \
-		-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-		-DAMReX_SPACEDIM=${DIM} \
-		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
-	
-	if ${CMAKE_CMD} > "${DIM_LOG_DIR}/cmake-config.log" 2>&1; then
-		log_success "Configuration complete for ${DIM}D"
-		BUILD_STATUS[${DIM}]="configured"
+	# Only run cmake configure if not doing incremental build or if build dir doesn't have CMakeCache
+	if [ "${INCREMENTAL_BUILD}" = false ] || [ ! -f "${BUILD_DIR}/CMakeCache.txt" ]; then
+		CMAKE_CMD="cmake \
+			-S ${REPO_ROOT} \
+			-B ${BUILD_DIR} \
+			-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+			-DAMReX_SPACEDIM=${DIM} \
+			-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
+		
+		if ${CMAKE_CMD} > "${DIM_LOG_DIR}/cmake-config.log" 2>&1; then
+			log_success "Configuration complete for ${DIM}D"
+			BUILD_STATUS[${DIM}]="configured"
+		else
+			log_error "Configuration failed for ${DIM}D. See ${DIM_LOG_DIR}/cmake-config.log"
+			BUILD_STATUS[${DIM}]="config_failed"
+			continue
+		fi
 	else
-		log_error "Configuration failed for ${DIM}D. See ${DIM_LOG_DIR}/cmake-config.log"
-		BUILD_STATUS[${DIM}]="config_failed"
-		continue
+		log_info "Skipping configuration (using existing CMakeCache.txt)"
+		BUILD_STATUS[${DIM}]="configured"
 	fi
 	
 	# --------------------------------------------------
@@ -198,6 +244,7 @@ for DIM in "${DIMENSIONS[@]}"; do
 		{
 			echo ""
 			echo "# Temporary overrides for debug testing"
+			echo "tiny_profiler.enabled = 0"
 			echo "max_timesteps = ${MAX_TIMESTEPS}"
 			echo "plotfile_prefix = \"${jobname}_plt\""
 			echo "checkpoint_prefix = \"${jobname}_chk\""
@@ -211,21 +258,26 @@ for DIM in "${DIMENSIONS[@]}"; do
 	# --------------------------------------------------
 	# Run tests
 	# --------------------------------------------------
-	log_info "Running tests for ${DIM}D..."
+	log_info "Running tests for ${DIM}D (ignoring non-zero exits, checking for crashes only)..."
 	
 	cd "${BUILD_DIR}"
 	
-	CTEST_CMD="ctest \
+	# Run tests without failing on non-zero return codes
+	# We only care about crashes (segfaults, aborts), not numerical correctness
+	ctest \
 		--output-on-failure \
 		--parallel ${CTEST_PARALLEL_JOBS} \
-		--output-junit ${DIM_LOG_DIR}/test-results.xml"
+		--output-junit ${DIM_LOG_DIR}/test-results.xml \
+		> "${DIM_LOG_DIR}/ctest-output.log" 2>&1 || true
 	
-	if ${CTEST_CMD} > "${DIM_LOG_DIR}/ctest-output.log" 2>&1; then
-		log_success "All tests passed for ${DIM}D"
-		TEST_STATUS[${DIM}]="passed"
+	# Check for actual crashes in the output
+	CRASH_PATTERNS="Segmentation fault|segfault|core dumped|Aborted|Signal:|SIGSEGV|SIGABRT|SIGBUS|SIGFPE|SIGILL"
+	if grep -E "${CRASH_PATTERNS}" "${DIM_LOG_DIR}/ctest-output.log" > "${DIM_LOG_DIR}/crashes.log" 2>&1; then
+		log_error "Detected crashes in ${DIM}D tests. See ${DIM_LOG_DIR}/crashes.log"
+		TEST_STATUS[${DIM}]="crashed"
 	else
-		log_error "Some tests failed for ${DIM}D. See ${DIM_LOG_DIR}/ctest-output.log"
-		TEST_STATUS[${DIM}]="failed"
+		log_success "No crashes detected for ${DIM}D (test exits with non-zero codes are expected with max_timesteps=${MAX_TIMESTEPS})"
+		TEST_STATUS[${DIM}]="completed"
 	fi
 	
 	# --------------------------------------------------
@@ -298,7 +350,7 @@ for DIM in "${DIMENSIONS[@]}"; do
 		echo "  Logs: ${LOG_ROOT}/${DIM}d/"
 	} | tee -a "${SUMMARY_FILE}"
 	
-	if [[ "${BUILD}" != "compiled" ]] || [[ "${TEST}" != "passed" ]]; then
+	if [[ "${BUILD}" != "compiled" ]] || [[ "${TEST}" == "crashed" ]]; then
 		OVERALL_STATUS="FAILED"
 	fi
 done
