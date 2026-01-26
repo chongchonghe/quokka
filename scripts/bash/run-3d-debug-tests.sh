@@ -95,12 +95,17 @@ mkdir -p "${BACKUP_DIR}"
 modified_count=0
 while IFS= read -r -d '' input_file; do
 	filename=$(basename "${input_file}")
+	jobname="${filename%.in}"  # Remove .in extension
 	cp "${input_file}" "${BACKUP_DIR}/${filename}"
 	
-	# Append max_timesteps to end of file (this overrides any earlier values)
-	echo "" >> "${input_file}"
-	echo "# Temporary override for debug testing" >> "${input_file}"
-	echo "max_timesteps = ${MAX_TIMESTEPS}" >> "${input_file}"
+	# Append overrides to end of file (these override any earlier values)
+	{
+		echo ""
+		echo "# Temporary overrides for debug testing"
+		echo "max_timesteps = ${MAX_TIMESTEPS}"
+		echo "plotfile_prefix = \"${jobname}_plt\""
+		echo "checkpoint_prefix = \"${jobname}_chk\""
+	} >> "${input_file}"
 	
 	((modified_count++))
 done < <(find "${INPUT_DIR}" -name "*.in" -print0)
