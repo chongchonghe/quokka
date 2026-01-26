@@ -244,6 +244,7 @@ for DIM in "${DIMENSIONS[@]}"; do
 		{
 			echo ""
 			echo "# Temporary overrides for debug testing"
+			echo "tiny_profiler.enabled = 0"
 			echo "max_timesteps = ${MAX_TIMESTEPS}"
 			echo "plotfile_prefix = \"${jobname}_plt\""
 			echo "checkpoint_prefix = \"${jobname}_chk\""
