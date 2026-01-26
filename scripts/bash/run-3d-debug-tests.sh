@@ -86,7 +86,7 @@ fi
 # Modify input files
 # ==============================================================================
 
-echo "[3/4] Setting max_timesteps=${MAX_TIMESTEPS} in input files..."
+echo "[3/4] Appending max_timesteps=${MAX_TIMESTEPS} to input files..."
 
 INPUT_DIR="${REPO_ROOT}/inputs"
 BACKUP_DIR="${LOG_DIR}/input-backups"
@@ -97,11 +97,12 @@ while IFS= read -r -d '' input_file; do
 	filename=$(basename "${input_file}")
 	cp "${input_file}" "${BACKUP_DIR}/${filename}"
 	
-	if grep -q "^max_timesteps" "${input_file}"; then
-		sed -i.bak "s/^max_timesteps[[:space:]]*=.*/max_timesteps = ${MAX_TIMESTEPS}/" "${input_file}"
-		rm -f "${input_file}.bak"
-		((modified_count++))
-	fi
+	# Append max_timesteps to end of file (this overrides any earlier values)
+	echo "" >> "${input_file}"
+	echo "# Temporary override for debug testing" >> "${input_file}"
+	echo "max_timesteps = ${MAX_TIMESTEPS}" >> "${input_file}"
+	
+	((modified_count++))
 done < <(find "${INPUT_DIR}" -name "*.in" -print0)
 
 echo "  Modified ${modified_count} input files"

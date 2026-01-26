@@ -176,7 +176,7 @@ for DIM in "${DIMENSIONS[@]}"; do
 	# --------------------------------------------------
 	# Temporarily modify input files to set max_timesteps
 	# --------------------------------------------------
-	log_info "Temporarily modifying input files to set max_timesteps=${MAX_TIMESTEPS}..."
+	log_info "Appending max_timesteps=${MAX_TIMESTEPS} to input files..."
 	
 	# Backup and modify input files
 	INPUT_DIR="${REPO_ROOT}/inputs"
@@ -191,26 +191,12 @@ for DIM in "${DIMENSIONS[@]}"; do
 		# Backup original
 		cp "${input_file}" "${BACKUP_DIR}/${filename}"
 		
-		# Modify max_timesteps parameter
-		if grep -q "^max_timesteps" "${input_file}"; then
-			# Replace existing max_timesteps
-			sed -i.bak "s/^max_timesteps[[:space:]]*=.*/max_timesteps = ${MAX_TIMESTEPS}/" "${input_file}"
-			modified_files+=("${input_file}")
-		elif grep -q "^#.*max_timesteps" "${input_file}"; then
-			# Uncomment and set max_timesteps
-			sed -i.bak "s/^#.*max_timesteps.*/max_timesteps = ${MAX_TIMESTEPS}/" "${input_file}"
-			modified_files+=("${input_file}")
-		else
-			# Add max_timesteps if not present (after plotfile_interval or checkpoint_interval)
-			if grep -q "plotfile_interval\|checkpoint_interval" "${input_file}"; then
-				sed -i.bak "/\(plotfile_interval\|checkpoint_interval\)/a\\
-max_timesteps = ${MAX_TIMESTEPS}" "${input_file}"
-				modified_files+=("${input_file}")
-			fi
-		fi
+		# Append max_timesteps to end of file (this overrides any earlier values)
+		echo "" >> "${input_file}"
+		echo "# Temporary override for debug testing" >> "${input_file}"
+		echo "max_timesteps = ${MAX_TIMESTEPS}" >> "${input_file}"
 		
-		# Remove sed backup files
-		rm -f "${input_file}.bak"
+		modified_files+=("${input_file}")
 	done < <(find "${INPUT_DIR}" -name "*.in" -print0)
 	
 	log_info "Modified ${#modified_files[@]} input files"
