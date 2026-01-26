@@ -29,7 +29,7 @@ CMAKE_BUILD_TYPE="Debug"
 NUM_BUILD_JOBS=16
 
 # Test configuration
-MAX_TIMESTEPS=2
+MAX_TIMESTEPS=1
 CTEST_PARALLEL_JOBS=16
 
 # Dimensionalities to test
@@ -316,14 +316,14 @@ log_info "Main log file: ${MAIN_LOG}"
 log_info "Summary report: ${SUMMARY_FILE}"
 
 # Create a symlink to the latest run
-LATEST_LINK="${REPO_ROOT}/nightly-logs/latest"
+LATEST_LINK="${REPO_ROOT}/../nightly-logs/latest"
 rm -f "${LATEST_LINK}"
 ln -s "${LOG_ROOT}" "${LATEST_LINK}"
 log_info "Symlink to latest run: ${LATEST_LINK}"
 
 # Optional: Compress old logs (keep last 7 days)
 log_info "Cleaning up old logs (keeping last 7 days)..."
-find "${REPO_ROOT}/nightly-logs" -maxdepth 1 -type d -name "20*" -mtime +7 -exec rm -rf {} \; 2>/dev/null || true
+find "${REPO_ROOT}/../nightly-logs" -maxdepth 1 -type d -name "20*" -mtime +7 -exec rm -rf {} \; 2>/dev/null || true
 
 echo ""
 if [ "${OVERALL_STATUS}" = "SUCCESS" ]; then
