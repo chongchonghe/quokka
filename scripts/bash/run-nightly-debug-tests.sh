@@ -18,11 +18,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-LOG_ROOT="${REPO_ROOT}/nightly-logs/${TIMESTAMP}"
+LOG_ROOT="${REPO_ROOT}/../nightly-debug-logs/${TIMESTAMP}"
+SRC_PATH="${REPO_ROOT}/../env.rc"
+
+source "${SRC_PATH}"
 
 # Build configuration
 CMAKE_BUILD_TYPE="Debug"
-CMAKE_GENERATOR="Ninja"
+#CMAKE_GENERATOR=""  # Ninja or "" to default to "Unix Makefiles"
 NUM_BUILD_JOBS=16
 
 # Test configuration
@@ -86,7 +89,7 @@ check_command() {
 
 log_info "Validating environment..."
 
-REQUIRED_COMMANDS=(cmake ninja git)
+REQUIRED_COMMANDS=(cmake git)
 for cmd in "${REQUIRED_COMMANDS[@]}"; do
 	if ! check_command "$cmd"; then
 		log_error "Missing required command: $cmd"
@@ -145,7 +148,6 @@ for DIM in "${DIMENSIONS[@]}"; do
 	CMAKE_CMD="cmake \
 		-S ${REPO_ROOT} \
 		-B ${BUILD_DIR} \
-		-G ${CMAKE_GENERATOR} \
 		-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
 		-DAMReX_SPACEDIM=${DIM} \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON"
