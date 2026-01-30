@@ -167,7 +167,7 @@ for DIM in "${DIMENSIONS[@]}"; do
 	log_info "Processing ${DIM}D build"
 	log_info "=========================================="
 	
-	BUILD_DIR="${REPO_ROOT}/build-${DIM}d-debug"
+	BUILD_DIR="${REPO_ROOT}/build/${DIM}d-debug"
 	DIM_LOG_DIR="${LOG_ROOT}/${DIM}d"
 	mkdir -p "${DIM_LOG_DIR}"
 	
