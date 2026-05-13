@@ -100,7 +100,6 @@ run 1
 run 2
 run 3
 
-cell="Level_0/Cell_H"
 r1="${plt}.${flag}.r1"
 r2="${plt}.${flag}.r2"
 r3="${plt}.${flag}.r3"
@@ -109,7 +108,7 @@ compare() {
     local a="$1" b="$2" label="$3"
     echo ""
     echo "=== Comparing ${label} ==="
-    if diff -q "${a}/${cell}" "${b}/${cell}" > /dev/null 2>&1; then
+    if diff -rq "$a" "$b" > /dev/null 2>&1; then
         echo "PASS: ${label} are identical"
     else
         echo "FAIL: ${label} differ"
@@ -121,8 +120,8 @@ compare "$r1" "$r2" "run1 vs run2"
 compare "$r2" "$r3" "run2 vs run3"
 
 echo ""
-if diff -q "${r1}/${cell}" "${r2}/${cell}" > /dev/null 2>&1 && \
-   diff -q "${r2}/${cell}" "${r3}/${cell}" > /dev/null 2>&1; then
+if diff -rq "${r1}" "${r2}" > /dev/null 2>&1 && \
+   diff -rq "${r2}" "${r3}" > /dev/null 2>&1; then
     echo "All three runs are identical — reproducibility confirmed."
     exit 0
 else
