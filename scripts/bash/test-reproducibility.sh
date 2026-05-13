@@ -1,29 +1,39 @@
 #!/bin/bash
 # Test bit-for-bit reproducibility by running a problem three times and comparing outputs.
-# Prerequisites: source your environment, build the executable and fcompare before running.
+# Prerequisites: source your environment and build the executable before running.
 #
-# Usage: reproduce.sh <executable> <input_file> <fcompare_exe>
+# Usage: test-reproducibility.sh <problem_name> [build_path]
 #
 # Example:
-#   reproduce.sh ../build/gpu-3d/src/problems/SphericalCollapse/SphericalCollapse \
-#                ../inputs/SphericalCollapse.in \
-#                ~/quokka/extern/amrex/Tools/Plotfile/fcompare.gnu.x86-trento.ex
+#   test-reproducibility.sh SphericalCollapse build/gpu-3d
 
 set -e
 
 usage() {
-    echo "Usage: $0 <executable> <input_file> <fcompare_exe>"
+    echo "Usage: $0 <problem_name> [build_path]"
+    echo "  problem_name: e.g. SphericalCollapse"
+    echo "  build_path:   e.g. build/gpu-3d (default: build/gpu-3d)"
     exit 1
 }
 
-[[ $# -ne 3 ]] && usage
+[[ $# -lt 1 || $# -gt 2 ]] && usage
 
-EXE="$1"
-INPUT="$2"
-FCOMPARE="$3"
+PROBLEM="$1"
+BUILD_PATH="${2:-build/gpu-3d}"
+
+EXE="${BUILD_PATH}/src/problems/${PROBLEM}/${PROBLEM}"
+FCOMPARE="$(ls extern/amrex/Tools/Plotfile/fcompare* 2>/dev/null | head -1)"
+
+if [[ -f "inputs/${PROBLEM}.toml" ]]; then
+    INPUT="inputs/${PROBLEM}.toml"
+elif [[ -f "inputs/${PROBLEM}.in" ]]; then
+    INPUT="inputs/${PROBLEM}.in"
+else
+    echo "Error: input file not found for ${PROBLEM} in inputs/"
+    exit 1
+fi
 
 [[ -x "$EXE" ]]      || { echo "Error: executable not found or not executable: $EXE"; exit 1; }
-[[ -f "$INPUT" ]]    || { echo "Error: input file not found: $INPUT"; exit 1; }
 [[ -x "$FCOMPARE" ]] || { echo "Error: fcompare not found or not executable: $FCOMPARE"; exit 1; }
 
 max_timesteps=$(awk '/^[[:space:]]*max_timesteps[[:space:]]*=/{print $3}' "$INPUT")
