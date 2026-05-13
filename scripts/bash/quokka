@@ -135,24 +135,24 @@ parse_preset() {
 	GPU_BACKEND=""
 
 	case "$preset" in
-	1d)       DIM=1; BUILD_TYPE=Release; BUILD_NAME=1d ;;
-	2d)       DIM=2; BUILD_TYPE=Release; BUILD_NAME=2d ;;
-	3d)       DIM=3; BUILD_TYPE=Release; BUILD_NAME=3d ;;
-	1d-debug) DIM=1; BUILD_TYPE=Debug;   BUILD_NAME=1d-debug ;;
-	2d-debug) DIM=2; BUILD_TYPE=Debug;   BUILD_NAME=2d-debug ;;
-	3d-debug) DIM=3; BUILD_TYPE=Debug;   BUILD_NAME=3d-debug ;;
-	1d-hip)   DIM=1; BUILD_TYPE=Release; BUILD_NAME=1d-hip;  GPU_BACKEND=HIP ;;
-	2d-hip)   DIM=2; BUILD_TYPE=Release; BUILD_NAME=2d-hip;  GPU_BACKEND=HIP ;;
-	3d-hip)   DIM=3; BUILD_TYPE=Release; BUILD_NAME=3d-hip;  GPU_BACKEND=HIP ;;
-	1d-cuda)  DIM=1; BUILD_TYPE=Release; BUILD_NAME=1d-cuda; GPU_BACKEND=CUDA ;;
-	2d-cuda)  DIM=2; BUILD_TYPE=Release; BUILD_NAME=2d-cuda; GPU_BACKEND=CUDA ;;
-	3d-cuda)  DIM=3; BUILD_TYPE=Release; BUILD_NAME=3d-cuda; GPU_BACKEND=CUDA ;;
+	1d)       DIM=1; BUILD_TYPE=Release ;;
+	2d)       DIM=2; BUILD_TYPE=Release ;;
+	3d)       DIM=3; BUILD_TYPE=Release ;;
+	1d-debug) DIM=1; BUILD_TYPE=Debug ;;
+	2d-debug) DIM=2; BUILD_TYPE=Debug ;;
+	3d-debug) DIM=3; BUILD_TYPE=Debug ;;
+	1d-hip)   DIM=1; BUILD_TYPE=Release; GPU_BACKEND=HIP ;;
+	2d-hip)   DIM=2; BUILD_TYPE=Release; GPU_BACKEND=HIP ;;
+	3d-hip)   DIM=3; BUILD_TYPE=Release; GPU_BACKEND=HIP ;;
+	1d-cuda)  DIM=1; BUILD_TYPE=Release; GPU_BACKEND=CUDA ;;
+	2d-cuda)  DIM=2; BUILD_TYPE=Release; GPU_BACKEND=CUDA ;;
+	3d-cuda)  DIM=3; BUILD_TYPE=Release; GPU_BACKEND=CUDA ;;
 	*)
 		die "unsupported preset '${preset}'"
 		;;
 	esac
 
-	BUILD_DIR="${ROOT}/build/${BUILD_NAME}"
+	BUILD_DIR="${ROOT}/build/${preset}"
 }
 
 resolve_root() {
