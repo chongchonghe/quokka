@@ -9,6 +9,11 @@
 
 set -e
 
+if [[ ! -d "extern" || ! -d "src" ]]; then
+    echo "Error: must be run from the Quokka repository root (extern/ and src/ not found)"
+    exit 1
+fi
+
 usage() {
     echo "Usage: $0 <problem_name> [build_path] [--fcompare <path>] [--maxstep <N>]"
     echo "  problem_name:  e.g. SphericalCollapse"
