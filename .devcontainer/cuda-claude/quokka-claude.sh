@@ -10,10 +10,11 @@ CONTAINER_CLAUDE_CONFIG_DIR="/home/ubuntu/.claude"
 PASS_TOKEN=1
 PASS_YOLO=1
 OFFLINE=0
+USE_DEEPSEEK=0
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--no-token] [--no-yolo] [--offline] <workspace-dir>
+Usage: $(basename "$0") [--ds] [--no-token] [--no-yolo] [--offline] <workspace-dir>
 
 Start Claude inside a Quokka CUDA Docker container.
 
@@ -21,6 +22,7 @@ Arguments:
   workspace-dir  Directory to mount at /home/ubuntu/workspace.
 
 Options:
+  --ds        Use DeepSeek's Anthropic-compatible API for Claude.
   --no-token  Do not pass GITHUB_TOKEN into the container.
   --no-yolo   Do not pass Claude's --dangerously-skip-permissions flag.
   --offline   Disable container networking.
@@ -33,6 +35,9 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --ds)
+      USE_DEEPSEEK=1
+      ;;
     --no-token)
       PASS_TOKEN=0
       ;;
@@ -103,6 +108,32 @@ if [[ "${PASS_TOKEN}" -eq 1 ]]; then
   if [[ -n "${token}" ]]; then
     docker_args+=(-e "GITHUB_TOKEN=${token}")
   fi
+fi
+
+if [[ "${USE_DEEPSEEK}" -eq 1 ]]; then
+  deepseek_api_key="${DEEPSEEK_API_KEY:-}"
+  if [[ -z "${deepseek_api_key}" ]] && command -v security >/dev/null 2>&1; then
+    deepseek_api_key="$(security find-generic-password -w -s "deepseek-api" -a "api-key" 2>/dev/null || true)"
+  fi
+  if [[ -z "${deepseek_api_key}" ]]; then
+    echo "DeepSeek API key not found. Set DEEPSEEK_API_KEY or store it in Keychain as service 'deepseek-api', account 'api-key'." >&2
+    exit 1
+  fi
+
+  docker_args+=(
+    -e "DEEPSEEK_API_KEY=${deepseek_api_key}"
+    -e "ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic"
+    -e "ANTHROPIC_AUTH_TOKEN=${deepseek_api_key}"
+    -e "API_TIMEOUT_MS=3000000"
+    -e "ANTHROPIC_MODEL=deepseek-v4-pro[1m]"
+    -e "ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-v4-pro"
+    -e "ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-v4-pro"
+    -e "ANTHROPIC_DEFAULT_HAIKU_MODEL=deepseek-v4-flash"
+    -e "CLAUDE_CODE_SUBAGENT_MODEL=deepseek-v4-pro"
+    -e "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"
+    -e "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1"
+    -e "CLAUDE_CODE_EFFORT_LEVEL=max"
+  )
 fi
 
 claude_args=(claude)
