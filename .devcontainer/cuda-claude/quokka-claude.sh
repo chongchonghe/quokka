@@ -8,15 +8,14 @@ HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${LAUNCH_DIR}/.claude}"
 CONTAINER_CLAUDE_CONFIG_DIR="/home/ubuntu/.claude"
 
 PASS_TOKEN=1
-PASS_YOLO=1
 OFFLINE=0
 USE_DEEPSEEK=0
 
 usage() {
   cat <<EOF
-Usage: $(basename "$0") [--ds] [--no-token] [--no-yolo] [--offline] <workspace-dir>
+Usage: $(basename "$0") [--ds] [--no-token] [--offline] <workspace-dir>
 
-Start Claude inside a Quokka CUDA Docker container.
+Start a shell inside a Quokka CUDA Docker container.
 
 Arguments:
   workspace-dir  Directory to mount at /home/ubuntu/workspace.
@@ -24,7 +23,6 @@ Arguments:
 Options:
   --ds        Use DeepSeek's Anthropic-compatible API for Claude.
   --no-token  Do not pass GITHUB_TOKEN into the container.
-  --no-yolo   Do not pass Claude's --dangerously-skip-permissions flag.
   --offline   Disable container networking.
 
 Environment:
@@ -40,9 +38,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-token)
       PASS_TOKEN=0
-      ;;
-    --no-yolo)
-      PASS_YOLO=0
       ;;
     --offline)
       OFFLINE=1
@@ -94,6 +89,7 @@ docker_args=(
   -v "${HOST_CLAUDE_CONFIG_DIR}:${CONTAINER_CLAUDE_CONFIG_DIR}"
   -w /home/ubuntu/workspace
   -e "CLAUDE_CONFIG_DIR=${CONTAINER_CLAUDE_CONFIG_DIR}"
+  -e "claudeyolo=claude --dangerously-skip-permissions"
 )
 
 if [[ "${OFFLINE}" -eq 1 ]]; then
@@ -136,9 +132,4 @@ if [[ "${USE_DEEPSEEK}" -eq 1 ]]; then
   )
 fi
 
-claude_args=(claude)
-if [[ "${PASS_YOLO}" -eq 1 ]]; then
-  claude_args+=(--dangerously-skip-permissions)
-fi
-
-exec docker "${docker_args[@]}" "${IMAGE}" "${claude_args[@]}"
+exec docker "${docker_args[@]}" "${IMAGE}" bash
