@@ -257,12 +257,25 @@ void QuokkaSimulation<TheProblem>::ComputeDerivedVar(int lev, std::string const 
 			Real const Eint = HydroSystem<TheProblem>::ComputeInternalEnergy(state[bx], i, j, k, nullptr);
 			output[bx](i, j, k, ncomp) = quokka::ResampledCooling::ComputeSoundSpeedFromRhoEint(rho, Eint, tables) / 1.0e5; // km/s
 		});
+	} else if (dname == "Jeans_length_pc") {
+		// Jeans length (pc) from the ideal-gas EOS (no cooling table).
+		// mu = 1.4 (mean molecular weight), so the mean particle mass is mu * m_p.
+		// c_s = sqrt(k_B * T / (mu * m_p)), n = rho / (mu * m_p),
+		// lambda_J = c_s * sqrt(pi / (G * mu * rho)).
+		amrex::ParallelFor(mf, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+			Real const rho = state[bx](i, j, k, HydroSystem<TheProblem>::density_index);
+			Real const Eint = HydroSystem<TheProblem>::ComputeInternalEnergy(state[bx], i, j, k, nullptr);
+			Real const Tgas = quokka::EOS<TheProblem>::ComputeTgasFromEint(rho, Eint);
+			Real const c_s = std::sqrt(C::k_B * Tgas / mu);
+			Real const lambda_J = c_s * std::sqrt(M_PI / (C::Gconst * rho));
+			output[bx](i, j, k, ncomp) = lambda_J / parsec;
+		});
 	} else {
 		auto tables = resampledTables_.const_tables();
 		Real const hot_T = userData_.hot_T;
 		Real const warm_T = userData_.warm_T;
 		Real const cold_T = userData_.cold_T;
-		if (dname == "cold_gas") {
+		if (dname == "cold_gas_density") {
 			amrex::ParallelFor(mf, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 				Real const rho = state[bx](i, j, k, HydroSystem<TheProblem>::density_index);
 				Real const Eint = HydroSystem<TheProblem>::ComputeInternalEnergy(state[bx], i, j, k, nullptr);
