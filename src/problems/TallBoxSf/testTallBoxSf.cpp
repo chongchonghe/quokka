@@ -117,31 +117,37 @@ template <> void QuokkaSimulation<TheProblem>::createInitialStochasticStellarPop
 
 template <> void QuokkaSimulation<TheProblem>::refineGrid(int lev, amrex::TagBoxArray &tags, amrex::Real /*time*/, int /*ngrow*/)
 {
-	// geometrical refinement
-	// tag cells within the cylinder defined by R < Rmax and abs(z) < zmax
+	const amrex::Real G = C::Gconst;
+	const amrex::Real dx = geom[lev].CellSizeArray()[0];
+
+	// read-in Jeans length refinement runtime params
 	amrex::ParmParse const pp("problem");
-	std::vector<amrex::Real> refine_zmax_list;
-	pp.queryarr("refine_zmax", refine_zmax_list);
+	int N_cells = 0;
+	pp.query("Jeans_refine_ncells", N_cells); // inverse of the 'Jeans number' [Truelove et al. (1997)]
 
-	// If no list is provided or level exceeds list size, skip refinement
-	if (refine_zmax_list.empty() || std::cmp_greater_equal(lev, refine_zmax_list.size())) {
-		return;
+	for (amrex::MFIter mfi(state_new_cc_[lev]); mfi.isValid(); ++mfi) {
+
+		const amrex::Box &box = mfi.validbox();
+		const auto state = state_new_cc_[lev].const_array(mfi);
+		const auto tag = tags.array(mfi);
+		const int nidx = HydroSystem<TheProblem>::density_index;
+
+		// Jeans refinement over the whole domain (no z restriction).
+		// Jeans length computed from the ideal-gas EOS using the isothermal sound speed:
+		// c_s = sqrt(k_B * T / mu), n = rho / mu, lambda_J = c_s * sqrt(pi / (G * mu * n))
+		// where mu is the mean particle mass (= mean_molecular_weight * m_p).
+		amrex::ParallelFor(box, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
+			Real const rho = state(i, j, k, nidx);
+			Real const Eint = HydroSystem<TheProblem>::ComputeInternalEnergy(state, i, j, k, nullptr);
+			Real const Tgas = quokka::EOS<TheProblem>::ComputeTgasFromEint(rho, Eint);
+			Real const cs = std::sqrt(C::k_B * Tgas / mu);
+
+			const amrex::Real l_Jeans = cs * std::sqrt(M_PI / (G * rho));
+			if (l_Jeans < (N_cells * dx)) {
+				tag(i, j, k) = amrex::TagBox::SET;
+			}
+		});
 	}
-
-	const amrex::Real refine_zmax = refine_zmax_list[lev];
-
-	const auto prob_lo = geom[lev].ProbLoArray();
-	const auto dx = geom[lev].CellSizeArray();
-	const auto tag = tags.arrays();
-
-	amrex::ParallelFor(tags, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-		amrex::Real const z = prob_lo[2] + ((k + 0.5) * dx[2]);
-
-		if (std::abs(z) < refine_zmax) {
-			tag[bx](i, j, k) = amrex::TagBox::SET;
-		}
-	});
-	amrex::Gpu::streamSynchronize();
 }
 
 template <> void QuokkaSimulation<TheProblem>::preCalculateInitialConditions()

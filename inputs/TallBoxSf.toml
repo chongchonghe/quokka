@@ -76,6 +76,8 @@ turbulence.random_seed = 140281
 turbulence.nsteps_per_t_turb = 10
 turbulence.stop_time = "32 * Myr"
 
+problem.Jeans_refine_ncells = 10
+
 statistics_interval = 512
 
 derived_vars = [
