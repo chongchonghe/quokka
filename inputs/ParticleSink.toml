@@ -30,5 +30,6 @@ problem.boost_vel_x = 1.0e7
 particles.verbose = 0
 particles.sink_particle_use_uniform_kernel = true
 
-tiny_profiler.enabled = 0
+tiny_profiler.enabled = 1
+statistics_interval = 1
 suppress_output = 1

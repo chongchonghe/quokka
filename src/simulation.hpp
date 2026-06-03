@@ -67,6 +67,7 @@ namespace filesystem = experimental::filesystem;
 #include "AMReX_PlotFileUtil.H"
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
+#include "AMReX_BLProfiler.H"
 #include "AMReX_SPACE.H"
 #include "AMReX_Utility.H"
 #include "AMReX_Vector.H"
@@ -1557,6 +1558,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 		if (statisticsInterval_ > 0 && (step + 1) % statisticsInterval_ == 0) {
 			last_statistics_step = step + 1;
 			WriteStatisticsFile();
+			BL_PROFILE_TINY_FLUSH();
 		}
 
 		if (plotfileInterval_ > 0 && (step + 1) % plotfileInterval_ == 0) {
