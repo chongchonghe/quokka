@@ -8,7 +8,7 @@ quokka.bc = ["periodic", "periodic", "periodic"]
 # *****************************************************************
 # VERBOSITY
 # *****************************************************************
-amr.v = 0  # verbosity in Amr
+amr.v = 1  # verbosity in Amr
 
 # *****************************************************************
 # Resolution and refinement
@@ -30,5 +30,6 @@ problem.boost_vel_x = 1.0e7
 particles.verbose = 0
 particles.sink_particle_use_uniform_kernel = true
 
-tiny_profiler.enabled = 0
-suppress_output = 1
+tiny_profiler.enabled = 1
+suppress_output = 0
+statistics_interval = 5
