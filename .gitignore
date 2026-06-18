@@ -1,3 +1,4 @@
+*.tar
 plt*
 chk*
 last_chk
