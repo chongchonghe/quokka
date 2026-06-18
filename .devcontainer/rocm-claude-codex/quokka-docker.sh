@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE="${QUOKKA_CLAUDE_IMAGE:-quokka-cuda-claude:arm64}"
+IMAGE="${QUOKKA_CLAUDE_IMAGE:-quokka-linux-amd64-rocm-claude-codex}"
 LAUNCH_DIR="$(pwd)"
 WORKSPACE_ARG=""
 HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${LAUNCH_DIR}/.claude}"
