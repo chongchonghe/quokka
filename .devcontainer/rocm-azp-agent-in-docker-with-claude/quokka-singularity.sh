@@ -113,8 +113,21 @@ sing_args=(
 )
 
 # Optional bind mounts — skip silently if the source doesn't exist on this host.
+# Share host shell/editor configuration.  The container's ~/.bashrc is not
+# sourced because we use --init-file, so these are available on demand.
 [[ -d "${HOME}/superpowers" ]] && \
   sing_args+=(--bind "${HOME}/superpowers:${CONTAINER_HOME}/superpowers")
+
+# Share host git configuration so the container uses the same user name,
+# email, aliases, and credentials as the host.
+[[ -f "${HOME}/.gitconfig" ]] && \
+  sing_args+=(--bind "${HOME}/.gitconfig:${CONTAINER_HOME}/.gitconfig")
+[[ -f "${HOME}/.git-credentials" ]] && \
+  sing_args+=(--bind "${HOME}/.git-credentials:${CONTAINER_HOME}/.git-credentials:ro")
+[[ -d "${HOME}/.config/git" ]] && \
+  sing_args+=(--bind "${HOME}/.config/git:${CONTAINER_HOME}/.config/git")
+
+# Share SSH keys (read-only) and GitHub CLI config with the container.
 [[ -d "${HOME}/.ssh" ]] && \
   sing_args+=(--bind "${HOME}/.ssh:${CONTAINER_HOME}/.ssh:ro")
 [[ -d "${HOME}/.config/gh" ]] && \
