@@ -47,10 +47,12 @@ TARGET=/priv/avatar/cche/azp-agent-in-docker-moth/container-quokka-agents
 INITFILE=$(mktemp /tmp/singularity-bash-init-XXXXXX.sh)
 trap "rm -f '${INITFILE}'" EXIT
 cat > "$INITFILE" << 'INITEOF'
+export HOME="/home/agent"
 export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PIP_BREAK_SYSTEM_PACKAGES=1
 [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc 2>/dev/null || true
 # Re-assert after bash.bashrc may have reset PATH via profile.d
+export HOME="/home/agent"
 export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 INITEOF
 
@@ -58,5 +60,4 @@ $sing exec --rocm \
     --no-home \
     --bind "$TARGET:$TARGET" \
     --pwd "$TARGET" \
-    --env "HOME=/home/agent" \
     "$sif" bash --init-file "$INITFILE"

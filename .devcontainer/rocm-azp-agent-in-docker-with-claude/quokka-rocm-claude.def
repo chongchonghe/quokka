@@ -102,6 +102,7 @@ From: ghcr.io/quokka-astro/quokka-linux-amd64-rocm:development
     # Profile.d snippet runs last (zzz- prefix) so PATH survives anything that
     # resets it in /etc/bash.bashrc or earlier profile.d scripts.
     cat > /etc/profile.d/zzz-agent-path.sh << 'PATHEOF'
+export HOME="/home/agent"
 export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PIP_BREAK_SYSTEM_PACKAGES=1
 PATHEOF
