@@ -92,9 +92,11 @@ WORKDIR /home/agent
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Singularity runs as the host user (not 'agent'), so make the installed tools
-# world-readable/executable so any UID can find them via PATH.
+# world-readable/executable.  useradd creates the home dir as 700, so we must
+# also make /home/agent/ itself traversable or nothing inside is reachable.
 USER root
-RUN chmod -R a+rX /home/agent/.local /home/agent/.claude 2>/dev/null || true
+RUN chmod a+x /home/agent && \
+    chmod -R a+rX /home/agent/.local /home/agent/.claude 2>/dev/null || true
 
 # Write a profile.d snippet that wins over any PATH reset in /etc/bash.bashrc
 # or earlier profile.d scripts (zzz- sorts last alphabetically).

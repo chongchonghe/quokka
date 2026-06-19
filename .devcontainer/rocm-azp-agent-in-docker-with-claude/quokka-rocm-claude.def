@@ -96,6 +96,7 @@ From: ghcr.io/quokka-astro/quokka-linux-amd64-rocm:development
     # Install Claude CLI as agent user (same as Docker), then fix permissions so
     # any host UID can access the files when Singularity runs.
     su - agent -c 'curl -fsSL https://claude.ai/install.sh | bash'
+    chmod a+x /home/agent
     chmod -R a+rX /home/agent/.local /home/agent/.claude 2>/dev/null || true
 
     # Profile.d snippet runs last (zzz- prefix) so PATH survives anything that
