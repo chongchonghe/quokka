@@ -46,7 +46,11 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # GITHUB_TOKEN works once "Read and write permissions" is enabled in
+          # Settings → Actions → General → Workflow permissions.
+          # If that setting is blocked by org policy, set CR_PAT to a personal
+          # access token with write:packages scope and it will be used instead.
+          password: ${{ secrets.CR_PAT || secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
