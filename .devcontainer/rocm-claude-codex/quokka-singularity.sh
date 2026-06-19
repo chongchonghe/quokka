@@ -1,23 +1,140 @@
 #!/bin/bash
+set -euo pipefail
 
-echo "========== Running on $(date) =========="
+SING="${SINGULARITY_BIN:-/opt/singularity-ce/4.3.0/bin/singularity}"
+IMAGE="${QUOKKA_CLAUDE_IMAGE:-quokka-linux-amd64-rocm-claude-codex.sif}"
+LAUNCH_DIR="$(pwd)"
+WORKSPACE_ARG=""
+HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${LAUNCH_DIR}/.claude}"
+CONTAINER_CLAUDE_CONFIG_DIR="/home/ubuntu/.claude"
 
-set -e
+PASS_TOKEN=0
+OFFLINE=0
+USE_DEEPSEEK=0
 
-sing="/opt/singularity-ce/4.3.0/bin/singularity"
+usage() {
+  cat <<EOF
+Usage: $(basename "$0") [--ds] [--pass-gh-token] [--offline] <workspace-dir>
 
-sif="quokka-linux-amd64-rocm-claude-codex.sif"
-#if [ ! -f "$sif" ]; then
-#  $sing pull "$sif" docker://ghcr.io/chongchonghe/quokka-linux-amd64-rocm-claude-codex:development
-#fi
+Start a shell inside a Quokka ROCm Singularity container.
 
-pwd
+Arguments:
+  workspace-dir  Directory to mount at /home/ubuntu/workspace.
 
-TARGET=/priv/avatar/cche/azp-agent-in-docker-moth/container-quokka-agents
+Options:
+  --ds             Use DeepSeek's Anthropic-compatible API for Claude.
+  --pass-gh-token  Pass GITHUB_TOKEN into the container.
+  --offline        Disable container networking.
 
-$sing exec --rocm \
-    --no-home \
-    --bind $TARGET:$TARGET \
-    --pwd $TARGET \
-    $sif bash
+Environment:
+  QUOKKA_CLAUDE_IMAGE       Singularity image to run (default: ${IMAGE})
+  QUOKKA_CLAUDE_CONFIG_DIR  Host Claude config dir (default: ${HOST_CLAUDE_CONFIG_DIR})
+  SINGULARITY_BIN           Path to singularity binary (default: ${SING})
+EOF
+}
 
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --ds)
+      USE_DEEPSEEK=1
+      ;;
+    --pass-gh-token)
+      PASS_TOKEN=1
+      ;;
+    --offline)
+      OFFLINE=1
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      if [[ -n "${WORKSPACE_ARG}" ]]; then
+        echo "Only one workspace directory can be provided." >&2
+        usage >&2
+        exit 2
+      fi
+      WORKSPACE_ARG="$1"
+      ;;
+  esac
+  shift
+done
+
+if [[ -z "${WORKSPACE_ARG}" ]]; then
+  echo "Missing workspace directory." >&2
+  usage >&2
+  exit 2
+fi
+
+WORKSPACE="${WORKSPACE_ARG}"
+if [[ "${WORKSPACE}" != /* ]]; then
+  WORKSPACE="${LAUNCH_DIR}/${WORKSPACE}"
+fi
+
+if [[ ! -d "${WORKSPACE}" ]]; then
+  echo "Workspace directory does not exist: ${WORKSPACE}" >&2
+  exit 1
+fi
+
+mkdir -p "${HOST_CLAUDE_CONFIG_DIR}"
+
+sing_args=(
+  exec
+  --rocm
+  --no-home
+  --bind "${WORKSPACE}:/home/ubuntu/workspace"
+  --bind "${HOST_CLAUDE_CONFIG_DIR}:${CONTAINER_CLAUDE_CONFIG_DIR}"
+  --bind "${HOME}/superpowers/quokka:/home/ubuntu/superpowers/quokka"
+  --bind "${HOME}/.ssh:/home/ubuntu/.ssh:ro"
+  --bind "${HOME}/.config/gh:/home/ubuntu/.config/gh"
+  --pwd /home/ubuntu/workspace
+  --env "CLAUDE_CONFIG_DIR=${CONTAINER_CLAUDE_CONFIG_DIR}"
+  --env "claudeyolo=claude --dangerously-skip-permissions"
+)
+
+if [[ "${OFFLINE}" -eq 1 ]]; then
+  sing_args+=(--net --network none)
+fi
+
+if [[ "${PASS_TOKEN}" -eq 1 ]]; then
+  token="${GITHUB_TOKEN:-}"
+  if [[ -z "${token}" ]] && command -v security >/dev/null 2>&1; then
+    token="$(security find-generic-password -w -s "github" -a "pr-and-issue" 2>/dev/null || true)"
+  fi
+  if [[ -n "${token}" ]]; then
+    sing_args+=(--env "GITHUB_TOKEN=${token}")
+  fi
+fi
+
+if [[ "${USE_DEEPSEEK}" -eq 1 ]]; then
+  deepseek_api_key="${DEEPSEEK_API_KEY:-}"
+  if [[ -z "${deepseek_api_key}" ]] && command -v security >/dev/null 2>&1; then
+    deepseek_api_key="$(security find-generic-password -w -s "deepseek-api" -a "api-key" 2>/dev/null || true)"
+  fi
+  if [[ -z "${deepseek_api_key}" ]]; then
+    echo "DeepSeek API key not found. Set DEEPSEEK_API_KEY or store it in Keychain as service 'deepseek-api', account 'api-key'." >&2
+    exit 1
+  fi
+
+  sing_args+=(
+    --env "DEEPSEEK_API_KEY=${deepseek_api_key}"
+    --env "ANTHROPIC_BASE_URL=https://api.deepseek.com/anthropic"
+    --env "ANTHROPIC_AUTH_TOKEN=${deepseek_api_key}"
+    --env "API_TIMEOUT_MS=3000000"
+    --env "ANTHROPIC_MODEL=deepseek-v4-pro[1m]"
+    --env "ANTHROPIC_DEFAULT_OPUS_MODEL=deepseek-v4-pro"
+    --env "ANTHROPIC_DEFAULT_SONNET_MODEL=deepseek-v4-pro"
+    --env "ANTHROPIC_DEFAULT_HAIKU_MODEL=deepseek-v4-flash"
+    --env "CLAUDE_CODE_SUBAGENT_MODEL=deepseek-v4-pro"
+    --env "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"
+    --env "CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=1"
+    --env "CLAUDE_CODE_EFFORT_LEVEL=max"
+  )
+fi
+
+exec "${SING}" "${sing_args[@]}" "${IMAGE}" bash
