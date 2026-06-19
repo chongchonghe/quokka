@@ -93,10 +93,12 @@ mkdir -p "${HOST_CLAUDE_CONFIG_DIR}"
 INITFILE=$(mktemp /tmp/singularity-bash-init-XXXXXX.sh)
 trap 'rm -f "${INITFILE}"' EXIT
 cat > "${INITFILE}" << 'INITEOF'
+export HOME="/home/agent"
 export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PIP_BREAK_SYSTEM_PACKAGES=1
 [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc 2>/dev/null || true
 # Re-assert after bash.bashrc / profile.d may have reset PATH
+export HOME="/home/agent"
 export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 INITEOF
 
@@ -107,8 +109,6 @@ sing_args=(
   --bind "${WORKSPACE}:${CONTAINER_HOME}/workspace"
   --bind "${HOST_CLAUDE_CONFIG_DIR}:${CONTAINER_CLAUDE_CONFIG_DIR}"
   --pwd "${CONTAINER_HOME}/workspace"
-  # Set HOME so tools that read $HOME (ssh, gh, git) find the right directories.
-  --env "HOME=${CONTAINER_HOME}"
   --env "CLAUDE_CONFIG_DIR=${CONTAINER_CLAUDE_CONFIG_DIR}"
   --env "claudeyolo=claude --dangerously-skip-permissions"
 )
