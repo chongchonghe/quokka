@@ -71,16 +71,10 @@ constexpr double Egas0 = P_INITIAL / (quokka::EOS_Traits<DustDampingWithExternal
 constexpr double Egas0_internal = P_INITIAL / (quokka::EOS_Traits<DustDampingWithExternalForce>::gamma - 1.0);
 constexpr int numDustVars = Physics_NumVars::numDustVarsPerGroup;
 
-template <> struct Physics_Traits<DustDampingWithExternalForce> {
-	static constexpr bool is_self_gravity_enabled = false;
+template <> struct Physics_Traits<DustDampingWithExternalForce> : DefaultPhysicsTraits {
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr int numMassScalars = 0;		     // number of mass scalars
-	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
-	static constexpr bool is_radiation_enabled = false;
 	static constexpr bool is_dust_enabled = true;
 	static constexpr int nDustGroups = 2; // number of dust groups
-	static constexpr bool is_mhd_enabled = false;
-	static constexpr int nGroups = 1; // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gravitational_constant = 1.0;
@@ -89,10 +83,10 @@ template <> struct Physics_Traits<DustDampingWithExternalForce> {
 };
 
 template <>
-AMREX_GPU_HOST_DEVICE auto DustDrag<DustDampingWithExternalForce>::ComputeReciprocalStoppingTime(amrex::Real /*rho_g*/,
-												 amrex::GpuArray<amrex::Real, nDustGroups_> /*rho_d*/,
-												 amrex::GpuArray<amrex::Real, nDustGroups_> /*rel_vel_mag*/,
-												 double /*cs*/) -> amrex::GpuArray<amrex::Real, nDustGroups_>
+AMREX_GPU_HOST_DEVICE auto DustSources<DustDampingWithExternalForce>::ComputeReciprocalStoppingTime(amrex::Real /*rho_g*/,
+												    amrex::GpuArray<amrex::Real, nDustGroups_> /*rho_d*/,
+												    amrex::GpuArray<amrex::Real, nDustGroups_> /*rel_vel_mag*/,
+												    double /*cs*/) -> amrex::GpuArray<amrex::Real, nDustGroups_>
 {
 	amrex::GpuArray<amrex::Real, 2> alpha{};
 	alpha[0] = 1.0 / TS1;
@@ -257,7 +251,7 @@ void QuokkaSimulation<DustDampingWithExternalForce>::addStrangSplitSources(amrex
 auto problem_main() -> int
 {
 	// problem parameters
-	const double CFL_number = 1000000.0; // set large CFL to avoid CFL violation
+	const double CFL_number = 1000000.0; // large CFL number to avoid CFL violation
 
 	// problem initialization
 	QuokkaSimulation<DustDampingWithExternalForce> sim;

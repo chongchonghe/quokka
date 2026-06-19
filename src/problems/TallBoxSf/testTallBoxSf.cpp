@@ -69,18 +69,11 @@ template <> struct quokka::EOS_Traits<TheProblem> {
 	static constexpr double mean_molecular_weight = mu;
 };
 
-template <> struct Physics_Traits<TheProblem> {
+template <> struct Physics_Traits<TheProblem> : DefaultPhysicsTraits {
 	static constexpr bool is_self_gravity_enabled = true;
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr bool is_radiation_enabled = false;
 	static constexpr bool is_chemistry_enabled = false;
-	static constexpr bool is_mhd_enabled = false;
-	static constexpr bool is_dust_enabled = false;
-	static constexpr int nDustGroups = 1;			     // number of dust groups
-	static constexpr int numMassScalars = 0;		     // number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 1; // number of passive scalars
-	static constexpr int nGroups = 1;			     // number of radiation groups
-	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> void QuokkaSimulation<TheProblem>::createInitialStochasticStellarPopParticles()
@@ -297,11 +290,13 @@ template <> void QuokkaSimulation<TheProblem>::setInitialConditionsOnGrid(quokka
 	});
 }
 
-template <> void QuokkaSimulation<TheProblem>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_in) const
+template <>
+void QuokkaSimulation<TheProblem>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_in,
+						     amrex::MultiFab const &state_cc, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> const & /*state_fc*/) const
 {
 	const int ncomp = ncomp_in;
 	auto const &output = mf.arrays();
-	auto const &state = state_new_cc_[lev].const_arrays();
+	auto const &state = state_cc.const_arrays();
 
 	if (dname == "gpot") {
 		auto const &phi_arr = phi[lev].const_arrays();

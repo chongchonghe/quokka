@@ -115,14 +115,18 @@ These parameters are read in the `QuokkaSimulation<problem_t>::readParmParse()` 
 
 ## Dust
 
-These parameters are read in the `QuokkaSimulation<problem_t>::readParmParse()` function in `src/QuokkaSimulation.hpp`.
+These parameters are read in the `QuokkaSimulation<problem_t>::readParmParse()` function in `src/QuokkaSimulation.hpp`, except for optional Kwok stopping-time grain parameters that are read by problem setups that opt into `quokka::dust::readDustGrainParams`.
 
-| Parameter Name              | Type          | Default        | Description                                                                                                                    |
-|-----------------------------|---------------|----------------|--------------------------------------------------------------------------------------------------------------------------------|
-| dust.enable_iter_stoptime   | Boolean (0/1) | `0` (Disabled) | If set to 1, enables iterative dust stopping time calculation.                                                                 |
-| dust.omega                  | Float         | `1.0`          | Controls the level of frictional heating, with omega = 0 turning it off and omega = 1 depositing all dissipation into the gas. |
-| dust.print_iteration_counts | Boolean (0/1) | `0` (Disabled) | If set to 1, prints dust drag iteration counts for debugging.                                                                  |
-| dust.density_floor | Float | `0.0` | The minimum dust density value allowed in the simulation. Enforced through EnforceLimits.                                                           |
+| Parameter Name              | Type          | Default        | Description                                                                                                                                       |
+|-----------------------------|---------------|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| dust.enable_iter_stoptime   | Boolean (0/1) | `0` (Disabled) | If set to 1, enables iterative dust stopping time calculation.                                                                                    |
+| dust.omega_drag_heating     | Float         | `1.0`          | Controls deposition of physical dust-drag heating into the gas.                                                                                  |
+| dust.omega_rk_residual      | Float         | `0.0`          | Controls deposition of the discrete RK energy residual from the combined dust drag-plus-Lorentz update. Only relevant when dust and MHD are both enabled. |
+| dust.print_iteration_counts | Boolean (0/1) | `0` (Disabled) | If set to 1, prints dust drag or dust drag-plus-Lorentz iteration counts for debugging.                                                           |
+| dust.density_floor          | Float         | `0.0`          | The minimum dust density value allowed in the simulation. Enforced through EnforceLimits.                                                        |
+| dust.grain_radius           | Float or list | Problem default | Optional dust grain radius values used by problem setups that call the Kwok stopping-time helper. Must contain one value per dust group.          |
+| dust.grain_density          | Float or list | Problem default | Optional dust grain material density values used by problem setups that call the Kwok stopping-time helper. Must contain one value per dust group. |
+
 ## Particles
 
 These parameters are read in the `particleParmParse()` function in `src/particles/particle_types.hpp` and `readParmParse()` in `src/simulation.hpp`.

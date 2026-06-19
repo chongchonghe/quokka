@@ -46,17 +46,9 @@ constexpr double solarmass_in_g = C::M_solar;	  // g == 1 Msun
 constexpr double keV_in_ergs = 1000. * C::ev2erg; // ergs == 1 keV
 constexpr double m_H = C::m_p + C::m_e;		  // mass of hydrogen atom
 
-template <> struct Physics_Traits<ShockCloud> {
-	static constexpr bool is_self_gravity_enabled = false;
+template <> struct Physics_Traits<ShockCloud> : DefaultPhysicsTraits {
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr bool is_radiation_enabled = false;
-	static constexpr bool is_dust_enabled = false;
-	static constexpr int nDustGroups = 1; // number of dust groups
-	static constexpr bool is_mhd_enabled = false;
-	static constexpr int numMassScalars = 0;
 	static constexpr int numPassiveScalars = numMassScalars + 3;
-	static constexpr int nGroups = 1; // number of radiation groups
-	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct quokka::EOS_Traits<ShockCloud> {
@@ -272,7 +264,9 @@ template <> void QuokkaSimulation<ShockCloud>::computeAfterTimestep()
 	}
 }
 
-template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_in) const
+template <>
+void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_in,
+						     amrex::MultiFab const &state_cc, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> const & /*state_fc*/) const
 {
 	// compute derived variables and save in 'mf'
 
@@ -280,7 +274,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -297,7 +291,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -314,7 +308,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -326,7 +320,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho_cloud = state[bx](i, j, k, HydroSystem<ShockCloud>::scalar0_index + 1);
@@ -338,7 +332,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho_wind = state[bx](i, j, k, HydroSystem<ShockCloud>::scalar0_index + 2);
@@ -350,7 +344,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -366,7 +360,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -384,7 +378,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, HydroSystem<ShockCloud>::density_index);
@@ -401,7 +395,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 	} else if (dname == "mass") {
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		auto const dx = geom[lev].CellSizeArray();
 		const Real dvol = dx[0] * dx[1] * dx[2];
 
@@ -413,7 +407,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 	} else if (dname == "cloud_fraction") {
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			// cloud partial density
@@ -429,7 +423,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 		AMREX_ALWAYS_ASSERT_WITH_MESSAGE(coolingTableType_ == "resampled", "ShockCloud diagnostics require resampled cooling tables.");
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 
 		auto tables = resampledTables_.const_tables();
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
@@ -447,7 +441,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 	} else if (dname == "lab_velocity_x") {
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 		const Real delta_vx = ::delta_vx;
 
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
@@ -462,7 +456,7 @@ template <> void QuokkaSimulation<ShockCloud>::ComputeDerivedVar(int lev, std::s
 	} else if (dname == "velocity_mag") {
 		const int ncomp = ncomp_in;
 		auto const &output = mf.arrays();
-		auto const &state = state_new_cc_[lev].const_arrays();
+		auto const &state = state_cc.const_arrays();
 
 		amrex::ParallelFor(mf, mf.nGrowVect(), [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			// compute simulation-frame |v| in km/s

@@ -27,17 +27,10 @@ struct RandomBlast {
 constexpr double m_H = C::m_p + C::m_e;	     // mass of hydrogen atom
 constexpr double seconds_per_year = 3.154e7; // seconds per year
 
-template <> struct Physics_Traits<RandomBlast> {
+template <> struct Physics_Traits<RandomBlast> : DefaultPhysicsTraits {
 	static constexpr bool is_self_gravity_enabled = true;
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr bool is_radiation_enabled = false;
-	static constexpr bool is_dust_enabled = false;
-	static constexpr int nDustGroups = 1; // number of dust groups
-	static constexpr bool is_mhd_enabled = false;
-	static constexpr int numMassScalars = 0;
 	static constexpr int numPassiveScalars = numMassScalars + 1;
-	static constexpr int nGroups = 1; // number of radiation groups
-	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct quokka::EOS_Traits<RandomBlast> {
@@ -135,7 +128,9 @@ template <> void QuokkaSimulation<RandomBlast>::computeAfterTimestep()
 	userData_.SN_counter_arr.push_back(sn_count_cumulative_); // cumulative number of SNe at current time
 }
 
-template <> void QuokkaSimulation<RandomBlast>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_cc_in) const
+template <>
+void QuokkaSimulation<RandomBlast>::ComputeDerivedVar(int /*lev*/, std::string const &dname, amrex::MultiFab &mf, const int ncomp_cc_in,
+						      amrex::MultiFab const &state_cc, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> const & /*state_fc*/) const
 {
 	// compute derived variables and save in 'mf'
 	if (dname == "temperature") {
@@ -146,7 +141,7 @@ template <> void QuokkaSimulation<RandomBlast>::ComputeDerivedVar(int lev, std::
 		for (amrex::MFIter iter(mf); iter.isValid(); ++iter) {
 			const amrex::Box &indexRange = iter.validbox();
 			auto const &output = mf.array(iter);
-			auto const &state = state_new_cc_[lev].const_array(iter);
+			auto const &state = state_cc.const_array(iter);
 
 			amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
 				Real const rho = state(i, j, k, HydroSystem<RandomBlast>::density_index);
