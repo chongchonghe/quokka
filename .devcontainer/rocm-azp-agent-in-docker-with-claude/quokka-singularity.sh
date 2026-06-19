@@ -8,12 +8,12 @@ LAUNCH_DIR="$(pwd)"
 WORKSPACE_ARG=""
 # Claude config dir on the host; defaults to .claude/ in the launch directory
 # so each workspace can carry its own auth/settings.
-HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${LAUNCH_DIR}/.claude}"
+HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${HOME}/superpowers/.claude}"
 # The image was built with an 'agent' user at /home/agent; all container-side
 # paths use that home so tools find their config even when Singularity runs as
 # the host UID.
 CONTAINER_HOME="/home/agent"
-CONTAINER_CLAUDE_CONFIG_DIR="${CONTAINER_HOME}/.claude"
+CONTAINER_CLAUDE_CONFIG_DIR="${CONTAINER_HOME}/superpowers/.claude"
 
 PASS_TOKEN=0
 OFFLINE=0
@@ -107,15 +107,14 @@ sing_args=(
   --rocm
   --no-home
   --bind "${WORKSPACE}:${CONTAINER_HOME}/workspace"
-  --bind "${HOST_CLAUDE_CONFIG_DIR}:${CONTAINER_CLAUDE_CONFIG_DIR}"
   --pwd "${CONTAINER_HOME}/workspace"
   --env "CLAUDE_CONFIG_DIR=${CONTAINER_CLAUDE_CONFIG_DIR}"
   --env "claudeyolo=claude --dangerously-skip-permissions"
 )
 
 # Optional bind mounts — skip silently if the source doesn't exist on this host.
-[[ -d "${HOME}/superpowers/quokka" ]] && \
-  sing_args+=(--bind "${HOME}/superpowers/quokka:${CONTAINER_HOME}/superpowers/quokka")
+[[ -d "${HOME}/superpowers" ]] && \
+  sing_args+=(--bind "${HOME}/superpowers:${CONTAINER_HOME}/superpowers")
 [[ -d "${HOME}/.ssh" ]] && \
   sing_args+=(--bind "${HOME}/.ssh:${CONTAINER_HOME}/.ssh:ro")
 [[ -d "${HOME}/.config/gh" ]] && \
