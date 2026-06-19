@@ -91,6 +91,11 @@ WORKDIR /home/agent
 
 RUN curl -fsSL https://claude.ai/install.sh | bash
 
+# Singularity runs as the host user (not 'agent'), so make the installed tools
+# world-readable/executable so any UID can find them via PATH.
+USER root
+RUN chmod -R a+rX /home/agent/.local /home/agent/.claude 2>/dev/null || true
+
 ENV PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:${PATH}" \
     PIP_BREAK_SYSTEM_PACKAGES=1
 

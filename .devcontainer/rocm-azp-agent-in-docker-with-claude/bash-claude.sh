@@ -1,32 +1,48 @@
 #!/bin/bash
 
-# convert docker into singularity
-if [ ! -e quokka-rocm-claude.sif ]; then
-	if [ ! -e quokka-rocm-claude.tar ]; then
-		exit 1
+sing="/opt/singularity-ce/4.3.0/bin/singularity"
+sif="quokka-rocm-claude.sif"
+GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka:rocm-claude"
+
+if [ ! -e "$sif" ]; then
+	if [ -e quokka-rocm-claude.tar ]; then
+		# Convert from a locally-built Docker archive.
+		# Prefer the .def file when present: it writes PATH into profile.d so it
+		# survives shell startup scripts.
+		if [ -e quokka-rocm-claude.def ]; then
+			$sing build --fakeroot "$sif" quokka-rocm-claude.def
+		else
+			$sing build "$sif" docker-archive://quokka-rocm-claude.tar
+		fi
+	else
+		# No local archive — pull the pre-built image from GHCR (no root needed).
+		$sing pull "$sif" "$GHCR_IMAGE"
 	fi
-	singularity build quokka-rocm-claude.sif docker-archive://quokka-rocm-claude.tar
 fi
 
 echo "========== Running on $(date) =========="
-
 set -e
-
-sing="/opt/singularity-ce/4.3.0/bin/singularity"
-
-#sif="quokka-linux-amd64-rocm-claude-codex.sif"
-sif="quokka-rocm-claude.sif"
-#if [ ! -f "$sif" ]; then
-#  $sing pull "$sif" docker://ghcr.io/chongchonghe/quokka-linux-amd64-rocm-claude-codex:development
-#fi
 
 pwd
 
 TARGET=/priv/avatar/cche/azp-agent-in-docker-moth/container-quokka-agents
 
+# Singularity --env is overridden by the container's /etc/bash.bashrc, which
+# sources /etc/profile.d/ scripts that reset PATH.  Work around this by
+# creating a bash init file in /tmp (mounted from the host into the container)
+# that (1) sources system bashrc for completions, then (2) re-asserts PATH.
+INITFILE=$(mktemp /tmp/singularity-bash-init-XXXXXX.sh)
+trap "rm -f '$INITFILE'" EXIT
+cat > "$INITFILE" << 'INITEOF'
+export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PIP_BREAK_SYSTEM_PACKAGES=1
+[[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc 2>/dev/null || true
+# Re-assert after bash.bashrc may have reset PATH via profile.d
+export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+INITEOF
+
 $sing exec --rocm \
     --no-home \
     --bind $TARGET:$TARGET \
     --pwd $TARGET \
-    $sif bash
-
+    $sif bash --init-file "$INITFILE"
