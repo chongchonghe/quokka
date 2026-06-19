@@ -19,8 +19,9 @@ concurrency:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  IMAGE_TAG: rocm-claude
+  # Dedicated package name — avoids conflicts with the main quokka package.
+  IMAGE_NAME: ${{ github.repository_owner }}/quokka-rocm-claude
+  IMAGE_TAG: latest
   IMAGE_TAG_SHA: ${{ github.sha }}
 
 jobs:

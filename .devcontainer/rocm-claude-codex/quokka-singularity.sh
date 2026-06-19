@@ -3,7 +3,7 @@ set -euo pipefail
 
 SING="${SINGULARITY_BIN:-/opt/singularity-ce/4.3.0/bin/singularity}"
 IMAGE="${QUOKKA_CLAUDE_IMAGE:-quokka-rocm-claude.sif}"
-GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka:rocm-claude"
+GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka-rocm-claude:latest"
 LAUNCH_DIR="$(pwd)"
 WORKSPACE_ARG=""
 # Claude config dir on the host; defaults to .claude/ in the launch directory

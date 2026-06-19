@@ -2,7 +2,7 @@
 
 sing="/opt/singularity-ce/4.3.0/bin/singularity"
 sif="quokka-rocm-claude.sif"
-GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka:rocm-claude"
+GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka-rocm-claude:latest"
 
 if [ ! -e "$sif" ]; then
 	if [ -e quokka-rocm-claude.tar ]; then
