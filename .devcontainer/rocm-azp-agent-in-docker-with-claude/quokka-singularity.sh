@@ -127,9 +127,10 @@ sing_args=(
 [[ -d "${HOME}/.config/git" ]] && \
   sing_args+=(--bind "${HOME}/.config/git:${CONTAINER_HOME}/.config/git")
 
-# Share SSH keys (read-only) and GitHub CLI config with the container.
+# Share SSH keys and GitHub CLI config with the container.
+# NOT read-only: ssh needs to write known_hosts for new host keys.
 [[ -d "${HOME}/.ssh" ]] && \
-  sing_args+=(--bind "${HOME}/.ssh:${CONTAINER_HOME}/.ssh:ro")
+  sing_args+=(--bind "${HOME}/.ssh:${CONTAINER_HOME}/.ssh")
 [[ -d "${HOME}/.config/gh" ]] && \
   sing_args+=(--bind "${HOME}/.config/gh:${CONTAINER_HOME}/.config/gh")
 

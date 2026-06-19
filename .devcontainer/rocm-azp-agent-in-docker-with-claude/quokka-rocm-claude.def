@@ -108,6 +108,14 @@ export PIP_BREAK_SYSTEM_PACKAGES=1
 PATHEOF
     chmod 644 /etc/profile.d/zzz-agent-path.sh
 
+    # ssh uses getpwuid(getuid())->pw_dir for UserKnownHostsFile, ignoring $HOME.
+    # Force it to use /home/agent/.ssh/ so our bind mount is actually read.
+    mkdir -p /etc/ssh/ssh_config.d
+    printf 'UserKnownHostsFile /home/agent/.ssh/known_hosts /home/agent/.ssh/known_hosts2\nStrictHostKeyChecking accept-new\n' \
+        > /etc/ssh/ssh_config.d/10-agent-home.conf
+    chmod 644 /etc/ssh/ssh_config.d/10-agent-home.conf
+    printf '\nInclude /etc/ssh/ssh_config.d/*.conf\n' >> /etc/ssh/ssh_config
+
 %environment
     export TARGETARCH="linux/amd64"
     export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
