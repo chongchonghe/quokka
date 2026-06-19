@@ -96,6 +96,11 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 USER root
 RUN chmod -R a+rX /home/agent/.local /home/agent/.claude 2>/dev/null || true
 
+# Write a profile.d snippet that wins over any PATH reset in /etc/bash.bashrc
+# or earlier profile.d scripts (zzz- sorts last alphabetically).
+RUN printf 'export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\nexport PIP_BREAK_SYSTEM_PACKAGES=1\n' \
+    > /etc/profile.d/zzz-agent-path.sh && chmod 644 /etc/profile.d/zzz-agent-path.sh
+
 ENV PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:${PATH}" \
     PIP_BREAK_SYSTEM_PACKAGES=1
 
