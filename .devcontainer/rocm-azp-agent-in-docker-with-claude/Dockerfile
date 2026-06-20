@@ -100,7 +100,7 @@ RUN chmod a+x /home/agent && \
 
 # Write a profile.d snippet that wins over any PATH reset in /etc/bash.bashrc
 # or earlier profile.d scripts (zzz- sorts last alphabetically).
-RUN printf 'export HOME="/home/agent"\nexport PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\nexport PIP_BREAK_SYSTEM_PACKAGES=1\n' \
+RUN printf 'export HOME="/home/agent"\nexport PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}"\nexport PIP_BREAK_SYSTEM_PACKAGES=1\n' \
     > /etc/profile.d/zzz-agent-path.sh && chmod 644 /etc/profile.d/zzz-agent-path.sh
 
 # Singularity runs as the host UID, so getpwuid() returns the host home
@@ -114,6 +114,7 @@ RUN mkdir -p /etc/ssh/ssh_config.d && \
     printf '\nInclude /etc/ssh/ssh_config.d/*.conf\n' >> /etc/ssh/ssh_config
 
 ENV PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:${PATH}" \
+    MPI_ROOT="/opt/mpich/4.1.2" \
     PIP_BREAK_SYSTEM_PACKAGES=1
 
 CMD [ "/bin/bash" ]
