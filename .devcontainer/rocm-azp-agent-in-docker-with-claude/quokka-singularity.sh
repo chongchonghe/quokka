@@ -109,12 +109,12 @@ INITFILE=$(mktemp /tmp/singularity-bash-init-XXXXXX.sh)
 trap 'rm -f "${INITFILE}"' EXIT
 cat > "${INITFILE}" << INITEOF
 export HOME="${PW_HOME}"
-export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${PW_HOME}/superpowers/quokka/bin:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PIP_BREAK_SYSTEM_PACKAGES=1
 [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc 2>/dev/null || true
 # Re-assert after bash.bashrc / profile.d may have reset PATH
 export HOME="${PW_HOME}"
-export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${PW_HOME}/superpowers/quokka/bin:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 INITEOF
 
 sing_args=(
