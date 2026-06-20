@@ -81,15 +81,23 @@ WORKSPACE="${WORKSPACE_ARG}"
 [[ "${WORKSPACE}" != /* ]] && WORKSPACE="${LAUNCH_DIR}/${WORKSPACE}"
 
 if [[ ! -d "${WORKSPACE}" ]]; then
-  echo "Workspace directory does not exist: ${WORKSPACE}" >&2
+  echo "ERROR: Workspace directory does not exist: ${WORKSPACE}" >&2
+  echo "       Create it first or pass an existing directory." >&2
   exit 1
 fi
 
+echo "==> Quokka ROCm + Claude (Singularity)" >&2
+echo "==> Image: ${IMAGE}  |  pw-home: ${PW_HOME}  |  workspace: ${WORKSPACE}" >&2
+
 # Pull from GHCR if the .sif is absent — no root required.
 if [[ ! -f "${IMAGE}" ]]; then
-  echo "Image not found: ${IMAGE}" >&2
-  echo "Pulling from ${GHCR_IMAGE} ..." >&2
-  "${SING}" pull "${IMAGE}" "${GHCR_IMAGE}"
+  echo "==> Image not found: ${IMAGE}" >&2
+  echo "==> Pulling from ${GHCR_IMAGE} ..." >&2
+  "${SING}" pull "${IMAGE}" "${GHCR_IMAGE}" || {
+    echo "ERROR: Failed to pull image from ${GHCR_IMAGE}" >&2
+    exit 1
+  }
+  echo "==> Pull complete." >&2
 fi
 
 mkdir -p "${HOST_CLAUDE_CONFIG_DIR}"
@@ -124,7 +132,7 @@ sing_args=(
 # of $HOME, bind host dotfiles to the path that getpwuid actually returns.
 # --bind creates missing parent directories, so ${PW_HOME} is created even
 # though --no-home is set.
-(( HOST_CONFIG_COUNT = 0 ))
+HOST_CONFIG_COUNT=0
 
 [[ -d "${HOME}/superpowers" ]] && {
   sing_args+=(--bind "${HOME}/superpowers:${PW_HOME}/superpowers")
@@ -162,7 +170,7 @@ sing_args=(
   HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
 }
 
-echo "pw home: ${PW_HOME}  (${HOST_CONFIG_COUNT} host config dirs/files mounted)" >&2
+echo "==> Mounted ${HOST_CONFIG_COUNT} host config(s) to ${PW_HOME}" >&2
 
 if [[ "${OFFLINE}" -eq 1 ]]; then
   sing_args+=(--net --network none)
@@ -202,3 +210,8 @@ if [[ "${USE_DEEPSEEK}" -eq 1 ]]; then
 fi
 
 "${SING}" "${sing_args[@]}" "${IMAGE}" bash --init-file "${INITFILE}"
+sing_rc=$?
+if [[ ${sing_rc} -ne 0 ]]; then
+  echo "ERROR: Singularity exited with code ${sing_rc}" >&2
+fi
+exit ${sing_rc}
