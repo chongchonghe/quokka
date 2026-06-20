@@ -175,6 +175,8 @@ if [[ "${USE_DEEPSEEK}" -eq 1 ]]; then
   deepseek_api_key="${DEEPSEEK_API_KEY:-}"
   if [[ -z "${deepseek_api_key}" ]] && command -v security >/dev/null 2>&1; then
     deepseek_api_key="$(security find-generic-password -w -s "deepseek-api" -a "api-key" 2>/dev/null || true)"
+  elif [[ -e ~/superpowers/.config/secrets/deepseek-api ]]; then
+    deepseek_api_key="$(cat ~/superpowers/.config/secrets/deepseek-api 2>/dev/null || true)"
   fi
   if [[ -z "${deepseek_api_key}" ]]; then
     echo "DeepSeek API key not found. Set DEEPSEEK_API_KEY or store it in Keychain as service 'deepseek-api', account 'api-key'." >&2
