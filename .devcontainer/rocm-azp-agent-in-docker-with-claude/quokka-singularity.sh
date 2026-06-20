@@ -12,15 +12,17 @@ WORKSPACE_ARG=""
 # (e.g. /home/cche).  We bind host config files to the getpwuid home so
 # ssh, git, gh and friends find them regardless of whether they consult
 # $HOME or the password database.
-AGENT_HOME="/home/agent"
-CONTAINER_WORKSPACE="${AGENT_HOME}/workspace"
-CONTAINER_CLAUDE_CONFIG_DIR="${AGENT_HOME}/superpowers/.claude"
-HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${HOME}/superpowers/.claude}"
+AGENT_HOME="/home/agent"                       # where container-installed binaries live
+CONTAINER_WORKSPACE="${AGENT_HOME}/workspace"  # workspace mount point (internal, arbitrary)
 
 # Singularity preserves the host UID, so getpwuid() inside the container
 # returns the same home as ${HOME} on the host.  Use the host HOME directly
 # (getent may not work depending on the host's NSS configuration).
 PW_HOME="${HOME}"
+
+# Container-side paths that depend on PW_HOME.
+CONTAINER_CLAUDE_CONFIG_DIR="${PW_HOME}/superpowers/.claude"
+HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${HOME}/superpowers/.claude}"
 
 PASS_TOKEN=0
 OFFLINE=0
