@@ -6,14 +6,21 @@ IMAGE="${QUOKKA_CLAUDE_IMAGE:-quokka-rocm-claude.sif}"
 GHCR_IMAGE="docker://ghcr.io/chongchonghe/quokka-rocm-claude:latest"
 LAUNCH_DIR="$(pwd)"
 WORKSPACE_ARG=""
-# Claude config dir on the host; defaults to .claude/ in the launch directory
-# so each workspace can carry its own auth/settings.
+
+# The image installs Claude and user tools at /home/agent, but Singularity
+# runs as the host UID and getpwuid(getuid()) returns the host user's home
+# (e.g. /home/cche).  We bind host config files to the getpwuid home so
+# ssh, git, gh and friends find them regardless of whether they consult
+# $HOME or the password database.
+AGENT_HOME="/home/agent"
+CONTAINER_WORKSPACE="${AGENT_HOME}/workspace"
+CONTAINER_CLAUDE_CONFIG_DIR="${AGENT_HOME}/superpowers/.claude"
 HOST_CLAUDE_CONFIG_DIR="${QUOKKA_CLAUDE_CONFIG_DIR:-${HOME}/superpowers/.claude}"
-# The image was built with an 'agent' user at /home/agent; all container-side
-# paths use that home so tools find their config even when Singularity runs as
-# the host UID.
-CONTAINER_HOME="/home/agent"
-CONTAINER_CLAUDE_CONFIG_DIR="${CONTAINER_HOME}/superpowers/.claude"
+
+# Singularity preserves the host UID, so getpwuid() inside the container
+# returns the same home as ${HOME} on the host.  Use the host HOME directly
+# (getent may not work depending on the host's NSS configuration).
+PW_HOME="${HOME}"
 
 PASS_TOKEN=0
 OFFLINE=0
@@ -27,7 +34,7 @@ Start a shell inside the Quokka ROCm+Claude Singularity container.
 If ${IMAGE} is absent it is pulled from GHCR automatically (no root needed).
 
 Arguments:
-  workspace-dir  Directory to mount at ${CONTAINER_HOME}/workspace.
+  workspace-dir  Directory to mount at ${CONTAINER_WORKSPACE}.
 
 Options:
   --ds             Use DeepSeek's Anthropic-compatible API instead of Claude.
@@ -36,7 +43,7 @@ Options:
 
 Environment:
   QUOKKA_CLAUDE_IMAGE       Singularity image to run (default: ${IMAGE})
-  QUOKKA_CLAUDE_CONFIG_DIR  Host Claude config dir  (default: <launch-dir>/.claude)
+  QUOKKA_CLAUDE_CONFIG_DIR  Host Claude config dir  (default: ${HOST_CLAUDE_CONFIG_DIR})
   SINGULARITY_BIN           Path to singularity binary (default: ${SING})
 EOF
 }
@@ -87,52 +94,75 @@ fi
 
 mkdir -p "${HOST_CLAUDE_CONFIG_DIR}"
 
-# The container's /etc/bash.bashrc sources profile.d scripts that reset PATH.
-# Use bash --init-file with a temp file that re-asserts PATH after sourcing
-# system bashrc, so completions and aliases are preserved.
+# Build the bash init file.  We set HOME to the getpwuid home so $HOME
+# and the password database agree.  PATH still includes /home/agent/...
+# so Claude and other container-installed tools are found.
 INITFILE=$(mktemp /tmp/singularity-bash-init-XXXXXX.sh)
 trap 'rm -f "${INITFILE}"' EXIT
-cat > "${INITFILE}" << 'INITEOF'
-export HOME="/home/agent"
-export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+cat > "${INITFILE}" << INITEOF
+export HOME="${PW_HOME}"
+export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PIP_BREAK_SYSTEM_PACKAGES=1
 [[ -f /etc/bash.bashrc ]] && source /etc/bash.bashrc 2>/dev/null || true
 # Re-assert after bash.bashrc / profile.d may have reset PATH
-export HOME="/home/agent"
-export PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+export HOME="${PW_HOME}"
+export PATH="${AGENT_HOME}/.local/bin:${AGENT_HOME}/.claude/local:${AGENT_HOME}/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 INITEOF
 
 sing_args=(
   exec
   --rocm
   --no-home
-  --bind "${WORKSPACE}:${CONTAINER_HOME}/workspace"
-  --pwd "${CONTAINER_HOME}/workspace"
+  --bind "${WORKSPACE}:${CONTAINER_WORKSPACE}"
+  --pwd "${CONTAINER_WORKSPACE}"
   --env "CLAUDE_CONFIG_DIR=${CONTAINER_CLAUDE_CONFIG_DIR}"
   --env "claudeyolo=claude --dangerously-skip-permissions"
 )
 
-# Optional bind mounts — skip silently if the source doesn't exist on this host.
-# Share host shell/editor configuration.  The container's ~/.bashrc is not
-# sourced because we use --init-file, so these are available on demand.
-[[ -d "${HOME}/superpowers" ]] && \
-  sing_args+=(--bind "${HOME}/superpowers:${CONTAINER_HOME}/superpowers")
+# ── Bind host config into the getpwuid home ──────────────────────────
+# Because ssh, git, and others can use getpwuid(getuid())->pw_dir instead
+# of $HOME, bind host dotfiles to the path that getpwuid actually returns.
+# --bind creates missing parent directories, so ${PW_HOME} is created even
+# though --no-home is set.
+(( HOST_CONFIG_COUNT = 0 ))
 
-# Share host git configuration so the container uses the same user name,
-# email, aliases, and credentials as the host.
-[[ -f "${HOME}/.gitconfig" ]] && \
-  sing_args+=(--bind "${HOME}/.gitconfig:${CONTAINER_HOME}/.gitconfig")
-[[ -f "${HOME}/.git-credentials" ]] && \
-  sing_args+=(--bind "${HOME}/.git-credentials:${CONTAINER_HOME}/.git-credentials:ro")
-[[ -d "${HOME}/.config/git" ]] && \
-  sing_args+=(--bind "${HOME}/.config/git:${CONTAINER_HOME}/.config/git")
+[[ -d "${HOME}/superpowers" ]] && {
+  sing_args+=(--bind "${HOME}/superpowers:${PW_HOME}/superpowers")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
 
-# Share SSH keys and GitHub CLI config with the container.
-# NOT read-only: ssh needs to write known_hosts for new host keys.
-[[ -d "${HOME}/.ssh" ]] && \
-  sing_args+=(--bind "${HOME}/.ssh:${CONTAINER_HOME}/.ssh")
-[[ -d "${HOME}/.config/gh" ]] && \
-  sing_args+=(--bind "${HOME}/.config/gh:${CONTAINER_HOME}/.config/gh")
+# Git configuration
+[[ -f "${HOME}/.gitconfig" ]] && {
+  sing_args+=(--bind "${HOME}/.gitconfig:${PW_HOME}/.gitconfig")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
+[[ -f "${HOME}/.git-credentials" ]] && {
+  sing_args+=(--bind "${HOME}/.git-credentials:${PW_HOME}/.git-credentials:ro")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
+[[ -d "${HOME}/.config/git" ]] && {
+  sing_args+=(--bind "${HOME}/.config/git:${PW_HOME}/.config/git")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
+
+# SSH keys (writable: ssh needs to update known_hosts for new hosts).
+# Bind to both PW_HOME (for the new image where ssh uses the default
+# ~/.ssh path) and AGENT_HOME (transitional: older images that hardcode
+# /home/agent/.ssh/known_hosts in ssh_config).  Remove the AGENT_HOME
+# bind once the updated image is in use.
+[[ -d "${HOME}/.ssh" ]] && {
+  sing_args+=(--bind "${HOME}/.ssh:${PW_HOME}/.ssh")
+  sing_args+=(--bind "${HOME}/.ssh:${AGENT_HOME}/.ssh")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
+
+# GitHub CLI
+[[ -d "${HOME}/.config/gh" ]] && {
+  sing_args+=(--bind "${HOME}/.config/gh:${PW_HOME}/.config/gh")
+  HOST_CONFIG_COUNT=$((HOST_CONFIG_COUNT + 1))
+}
+
+echo "pw home: ${PW_HOME}  (${HOST_CONFIG_COUNT} host config dirs/files mounted)" >&2
 
 if [[ "${OFFLINE}" -eq 1 ]]; then
   sing_args+=(--net --network none)

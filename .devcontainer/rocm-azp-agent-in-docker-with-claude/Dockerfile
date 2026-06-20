@@ -103,13 +103,13 @@ RUN chmod a+x /home/agent && \
 RUN printf 'export HOME="/home/agent"\nexport PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"\nexport PIP_BREAK_SYSTEM_PACKAGES=1\n' \
     > /etc/profile.d/zzz-agent-path.sh && chmod 644 /etc/profile.d/zzz-agent-path.sh
 
-# ssh uses getpwuid(getuid())->pw_dir for UserKnownHostsFile, ignoring $HOME.
-# Force it to use /home/agent/.ssh/ so our bind mount is actually read.
+# Accept new host keys automatically so container users aren't prompted
+# when connecting to a host for the first time.  The known_hosts file is
+# writable (bind-mounted from the host) so entries persist across sessions.
 RUN mkdir -p /etc/ssh/ssh_config.d && \
-    printf 'UserKnownHostsFile /home/agent/.ssh/known_hosts /home/agent/.ssh/known_hosts2\nStrictHostKeyChecking accept-new\n' \
-    > /etc/ssh/ssh_config.d/10-agent-home.conf && \
-    chmod 644 /etc/ssh/ssh_config.d/10-agent-home.conf && \
-    # Include the drop-in directory from the main ssh_config
+    printf 'StrictHostKeyChecking accept-new\n' \
+    > /etc/ssh/ssh_config.d/10-agent.conf && \
+    chmod 644 /etc/ssh/ssh_config.d/10-agent.conf && \
     printf '\nInclude /etc/ssh/ssh_config.d/*.conf\n' >> /etc/ssh/ssh_config
 
 ENV PATH="/home/agent/.local/bin:/home/agent/.claude/local:/home/agent/superpowers/quokka/bin:${PATH}" \
