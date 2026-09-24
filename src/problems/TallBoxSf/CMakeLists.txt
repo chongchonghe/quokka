@@ -17,4 +17,10 @@ if (AMReX_SPACEDIM EQUAL 3)
     set_tests_properties(ComputeTallBoxSfPerturbations PROPERTIES FIXTURES_SETUP TallBoxSf_fixture)
     set_tests_properties(TallBoxSf PROPERTIES FIXTURES_REQUIRED TallBoxSf_fixture)
     set_tests_properties(TallBoxSf PROPERTIES COST 85)
+
+    # TallBoxSf with FUV and LW radiation. It is meant to restart a hydro-only TallBoxSf checkpoint, so it has no test.
+    add_executable(TallBoxSfFuv TallBoxSfFuv.cpp ../../turbulence/TurbDataReader.cpp ${QuokkaObjSources})
+    if(AMReX_GPU_BACKEND MATCHES "CUDA")
+        setup_target_for_cuda_compilation(TallBoxSfFuv)
+    endif()
 endif()
