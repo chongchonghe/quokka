@@ -10,8 +10,8 @@
 #include "AMReX_Print.H"
 #include "AMReX_SPACE.H"
 #include "util/BC.hpp"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <format>
 
 #include "QuokkaSimulation.hpp"

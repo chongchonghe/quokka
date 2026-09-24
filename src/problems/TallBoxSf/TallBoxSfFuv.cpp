@@ -38,8 +38,8 @@ constexpr double mu = 1.0 * C::m_p;
 constexpr int n_groups = 2; // FUV and LW
 // Dust opacity of each group per unit gas mass (rough placeholder values)
 constexpr amrex::GpuArray<double, n_groups> kappa_dust = {2.0e4, 4.0e4}; // cm^2 g^-1
-constexpr double Erad_floor = 1.0e-25;		 // erg cm^-3, ~1e-12 of the Habing field energy density
-constexpr double chat_over_c = 1.0e-2;		 // reduced speed of light
+constexpr double Erad_floor = 1.0e-25;					 // erg cm^-3, ~1e-12 of the Habing field energy density
+constexpr double chat_over_c = 1.0e-2;					 // reduced speed of light
 
 struct TallBoxSfFuv {};
 
@@ -101,7 +101,7 @@ template <> struct RadSystem_Traits<TallBoxSfFuv> {
 
 template <>
 AMREX_GPU_HOST_DEVICE auto RadSystem<TallBoxSfFuv>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, n_groups + 1> /*rad_boundaries*/,
-											const double /*rho*/, const double /*Tgas*/)
+											 const double /*rho*/, const double /*Tgas*/)
     -> amrex::GpuArray<amrex::GpuArray<double, n_groups + 1>, 2>
 {
 	// kappa_dust has no device storage, so copy it to a local before indexing it with a runtime index
@@ -267,7 +267,8 @@ template <> void QuokkaSimulation<TallBoxSfFuv>::setInitialConditionsOnGrid(quok
 
 template <>
 void QuokkaSimulation<TallBoxSfFuv>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, const int ncomp_in,
-						     amrex::MultiFab const &state_cc, amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> const & /*state_fc*/) const
+						       amrex::MultiFab const &state_cc,
+						       amrex::Array<amrex::MultiFab, AMREX_SPACEDIM> const & /*state_fc*/) const
 {
 	const int ncomp = ncomp_in;
 	auto const &output = mf.arrays();
@@ -519,10 +520,10 @@ template <> void QuokkaSimulation<TallBoxSfFuv>::addStrangSplitSources(amrex::Mu
 // Implement User-defined diode BC
 // Diode BC: allows outflow, prevents inflow by reflecting the z-momentum
 template <>
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<TallBoxSfFuv>::setCustomBoundaryConditions(const amrex::IntVect &iv, amrex::Array4<Real> const &consVar,
-												int /*dcomp*/, int /*numcomp*/, amrex::GeometryData const &geom,
-												const Real /*time*/, const amrex::BCRec * /*bcr*/,
-												int /*bcomp*/, int /*orig_comp*/)
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
+AMRSimulation<TallBoxSfFuv>::setCustomBoundaryConditions(const amrex::IntVect &iv, amrex::Array4<Real> const &consVar, int /*dcomp*/, int /*numcomp*/,
+							 amrex::GeometryData const &geom, const Real /*time*/, const amrex::BCRec * /*bcr*/, int /*bcomp*/,
+							 int /*orig_comp*/)
 {
 	// Apply diode boundary conditions in z-direction (direction 2)
 	setDiodeBCLo<2>(iv, consVar, geom);
@@ -535,8 +536,8 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<TallBoxSfFuv>::setCustomB
 	const int k_hi = geom.Domain().bigEnd(2);
 	if (k < k_lo || k > k_hi) {
 		const int k_interior = (k < k_lo) ? k_lo : k_hi;
-		for (int n = RadSystem<TallBoxSfFuv>::radEnergy_index; n < RadSystem<TallBoxSfFuv>::radEnergy_index + Physics_NumVars::numRadVarsPerGroup * n_groups;
-		     ++n) {
+		for (int n = RadSystem<TallBoxSfFuv>::radEnergy_index;
+		     n < RadSystem<TallBoxSfFuv>::radEnergy_index + Physics_NumVars::numRadVarsPerGroup * n_groups; ++n) {
 			consVar(i, j, k, n) = consVar(i, j, k_interior, n);
 		}
 	}
