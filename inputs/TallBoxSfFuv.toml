@@ -84,67 +84,67 @@ turbulence.stop_time = "32 * Myr"
 
 statistics_interval = 512
 
-#derived_vars = [
-#	"temperature",
-#	"T_times_rho",
-#	"c_s",
-#	"gpot",
-#	"scalar0_z_outflow_rate",
-#	"true_hot_gas",
-#	"true_warm_gas",
-#	"true_cool_gas",
-#	"true_cold_gas",
-#	"true_hot_scalar0",
-#	"true_warm_scalar0",
-#	"true_cool_scalar0",
-#	"true_cold_scalar0",
-#	"true_hot_gas_z_outflow_rate",
-#	"true_warm_gas_z_outflow_rate",
-#	"true_cool_gas_z_outflow_rate",
-#	"true_cold_gas_z_outflow_rate",
-#	"true_hot_scalar0_z_outflow_rate",
-#	"true_warm_scalar0_z_outflow_rate",
-#	"true_cool_scalar0_z_outflow_rate",
-#	"true_cold_scalar0_z_outflow_rate"
-#]
-#
-## plotfiles: the hydro state variables and the (cooling-table) temperature only
-#quokka.diagnostics = ["plt", "slice_x", "slice_z", "proj"]
-#
-#quokka.plt.type = "PlotFile"
-#quokka.plt.file = "plt"
-#quokka.plt.time_int = "10*Myr"
-#quokka.plt.field_names = ["gasDensity", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "gasInternalEnergy", "gasEnergy", "temperature"]
-#
-#quokka.slice_x.type = "DiagFramePlane"
-#quokka.slice_x.file = "slicex_plt"
-#quokka.slice_x.normal = 0  # Plane normal (0 == x, 1 == y, 2 == z)
-#quokka.slice_x.center = 1.509001e21
-#quokka.slice_x.time_int = "1*Myr"
-#quokka.slice_x.field_names = ["gasDensity", "gasEnergy", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "temperature", "c_s", "gpot",
-#	"scalar_0", "scalar0_z_outflow_rate",
-#	"true_hot_gas", "true_warm_gas", "true_cool_gas", "true_cold_gas",
-#	"true_hot_scalar0", "true_warm_scalar0", "true_cool_scalar0", "true_cold_scalar0",
-#	"true_hot_gas_z_outflow_rate", "true_warm_gas_z_outflow_rate", "true_cool_gas_z_outflow_rate", "true_cold_gas_z_outflow_rate",
-#	"true_hot_scalar0_z_outflow_rate", "true_warm_scalar0_z_outflow_rate", "true_cool_scalar0_z_outflow_rate", "true_cold_scalar0_z_outflow_rate"]
-#quokka.slice_x.particles = "StochasticStellarPop_particles"
-#
-#quokka.slice_z.type = "DiagFramePlane"
-#quokka.slice_z.file = "slicez_plt"
-#quokka.slice_z.normal = 2  # Plane normal (0 == x, 1 == y, 2 == z)
-#quokka.slice_z.center = 1.0e12  # Domain center in the normal direction
-#quokka.slice_z.time_int = "1*Myr"
-#quokka.slice_z.field_names = ["gasDensity", "gasEnergy", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "temperature", "c_s", "gpot", "scalar_0", ]
-#quokka.slice_z.particles = "StochasticStellarPop_particles"
-#
-#quokka.proj.type = "ProjectionPlot"  # Projection plot diagnostic
-#quokka.proj.file = "proj_plt"  # Output file prefix (must end in "plt")
-#quokka.proj.time_int = "1*Myr"
-#quokka.proj.normal = 0  # Plane normal (0 == x, 1 == y, 2 == z)
-#quokka.proj.field_names = ["gasDensity", "z-GasMomentum", "T_times_rho",
-#	"scalar_0", "scalar0_z_outflow_rate",
-#	"true_hot_gas", "true_warm_gas", "true_cool_gas", "true_cold_gas",
-#	"true_hot_scalar0", "true_warm_scalar0", "true_cool_scalar0", "true_cold_scalar0",
-#	"true_hot_gas_z_outflow_rate", "true_warm_gas_z_outflow_rate", "true_cool_gas_z_outflow_rate", "true_cold_gas_z_outflow_rate",
-#	"true_hot_scalar0_z_outflow_rate", "true_warm_scalar0_z_outflow_rate", "true_cool_scalar0_z_outflow_rate", "true_cold_scalar0_z_outflow_rate"]
-#quokka.proj.particles = "StochasticStellarPop_particles"
+derived_vars = [
+	"temperature",
+	"T_times_rho",
+	"c_s",
+	"gpot",
+	"scalar0_z_outflow_rate",
+	"true_hot_gas",
+	"true_warm_gas",
+	"true_cool_gas",
+	"true_cold_gas",
+	"true_hot_scalar0",
+	"true_warm_scalar0",
+	"true_cool_scalar0",
+	"true_cold_scalar0",
+	"true_hot_gas_z_outflow_rate",
+	"true_warm_gas_z_outflow_rate",
+	"true_cool_gas_z_outflow_rate",
+	"true_cold_gas_z_outflow_rate",
+	"true_hot_scalar0_z_outflow_rate",
+	"true_warm_scalar0_z_outflow_rate",
+	"true_cool_scalar0_z_outflow_rate",
+	"true_cold_scalar0_z_outflow_rate"
+]
+
+# plotfiles: the hydro state variables and the (cooling-table) temperature only
+quokka.diagnostics = ["plt", "slice_x", "slice_z", "proj"]
+
+quokka.plt.type = "PlotFile"
+quokka.plt.file = "plt"
+quokka.plt.time_int = "10*Myr"
+quokka.plt.field_names = ["gasDensity", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "gasInternalEnergy", "gasEnergy", "temperature"]
+
+quokka.slice_x.type = "DiagFramePlane"
+quokka.slice_x.file = "slicex_plt"
+quokka.slice_x.normal = 0  # Plane normal (0 == x, 1 == y, 2 == z)
+quokka.slice_x.center = 1.509001e21
+quokka.slice_x.time_int = "1*Myr"
+quokka.slice_x.field_names = ["gasDensity", "gasEnergy", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "temperature", "c_s", "gpot",
+	"scalar_0", "scalar0_z_outflow_rate",
+	"true_hot_gas", "true_warm_gas", "true_cool_gas", "true_cold_gas",
+	"true_hot_scalar0", "true_warm_scalar0", "true_cool_scalar0", "true_cold_scalar0",
+	"true_hot_gas_z_outflow_rate", "true_warm_gas_z_outflow_rate", "true_cool_gas_z_outflow_rate", "true_cold_gas_z_outflow_rate",
+	"true_hot_scalar0_z_outflow_rate", "true_warm_scalar0_z_outflow_rate", "true_cool_scalar0_z_outflow_rate", "true_cold_scalar0_z_outflow_rate"]
+quokka.slice_x.particles = "StochasticStellarPop_particles"
+
+quokka.slice_z.type = "DiagFramePlane"
+quokka.slice_z.file = "slicez_plt"
+quokka.slice_z.normal = 2  # Plane normal (0 == x, 1 == y, 2 == z)
+quokka.slice_z.center = 1.0e12  # Domain center in the normal direction
+quokka.slice_z.time_int = "1*Myr"
+quokka.slice_z.field_names = ["gasDensity", "gasEnergy", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "temperature", "c_s", "gpot", "scalar_0", ]
+quokka.slice_z.particles = "StochasticStellarPop_particles"
+
+quokka.proj.type = "ProjectionPlot"  # Projection plot diagnostic
+quokka.proj.file = "proj_plt"  # Output file prefix (must end in "plt")
+quokka.proj.time_int = "1*Myr"
+quokka.proj.normal = 0  # Plane normal (0 == x, 1 == y, 2 == z)
+quokka.proj.field_names = ["gasDensity", "z-GasMomentum", "T_times_rho",
+	"scalar_0", "scalar0_z_outflow_rate",
+	"true_hot_gas", "true_warm_gas", "true_cool_gas", "true_cold_gas",
+	"true_hot_scalar0", "true_warm_scalar0", "true_cool_scalar0", "true_cold_scalar0",
+	"true_hot_gas_z_outflow_rate", "true_warm_gas_z_outflow_rate", "true_cool_gas_z_outflow_rate", "true_cold_gas_z_outflow_rate",
+	"true_hot_scalar0_z_outflow_rate", "true_warm_scalar0_z_outflow_rate", "true_cool_scalar0_z_outflow_rate", "true_cold_scalar0_z_outflow_rate"]
+quokka.proj.particles = "StochasticStellarPop_particles"
