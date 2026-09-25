@@ -37,8 +37,21 @@
 constexpr double mu = 1.0 * C::m_p;
 
 constexpr int n_groups = 2; // FUV and LW
-// Dust opacity of each group per unit gas mass (rough placeholder values)
-constexpr amrex::GpuArray<double, n_groups> kappa_dust = {2.0e4, 4.0e4}; // cm^2 g^-1
+// Dust absorption opacity at the group boundaries 6, 11.2 and 13.6 eV, from the Milky Way R_V = 3.1 model of Weingartner & Draine
+// (2001), renormalized following Draine (2003) (file kext_albedo_WD_MW_3.1_60_D03.all). We take the table row nearest to each
+// boundary, without interpolation:
+//
+//   lambda (micron)  albedo   <cos>  C_ext/H    K_abs     <cos^2>
+//   2.08930E-01     0.5082  0.5644 1.275E-21 4.486E+04 0.58806    (6 eV: lambda = 0.2066 micron)
+//   1.10000E-01     0.3232  0.6591 1.703E-21 8.246E+04 0.67949    (11.2 eV: lambda = 0.1107 micron)
+//   9.12011E-02     0.2386  0.6619 2.406E-21 1.310E+05 0.69469    (13.6 eV: lambda = 0.09116 micron)
+//
+// "K_abs = absorption cross section per mass of dust (cm^2/gram)"
+// "1.653E+02 = M_gas/M_dust for this dust model (assuming He/H=0.096)"
+constexpr double gas_to_dust_mass_ratio = 1.653e2;								  // M_gas / M_dust
+constexpr amrex::GpuArray<double, n_groups + 1> K_abs_dust = {4.486e4, 8.246e4, 1.310e5};			  // cm^2 per g of dust
+constexpr amrex::GpuArray<double, n_groups + 1> kappa_dust = {K_abs_dust.arr[0] / gas_to_dust_mass_ratio, K_abs_dust.arr[1] / gas_to_dust_mass_ratio,
+							      K_abs_dust.arr[2] / gas_to_dust_mass_ratio}; // cm^2 per g of gas
 constexpr double Erad_floor = 1.0e-25;					 // erg cm^-3, ~1e-12 of the Habing field energy density
 constexpr double chat_over_c = 1.0e-2;					 // reduced speed of light
 
@@ -94,7 +107,7 @@ template <> struct RadSystem_Traits<TallBoxSfFuv> {
 	static constexpr double energy_unit = C::ev2erg;
 	static constexpr amrex::GpuArray<double, n_groups + 1> radBoundaries = {6.0, 11.2, 13.6}; // eV
 	static constexpr int beta_order = 1;
-	static constexpr OpacityModel opacity_model = OpacityModel::piecewise_constant_opacity;
+	static constexpr OpacityModel opacity_model = OpacityModel::PPL_opacity_fixed_slope_spectrum;
 	// dust absorbs the bands and they exert radiation force, but the absorbed energy does not heat the gas
 	static constexpr bool dust_absorption_only = true;
 	// cell-by-cell photoelectric heating from the local FUV and LW field (Bate & Keto 2015, Eq. 26); this replaces
@@ -103,17 +116,22 @@ template <> struct RadSystem_Traits<TallBoxSfFuv> {
 };
 
 template <>
-AMREX_GPU_HOST_DEVICE auto RadSystem<TallBoxSfFuv>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, n_groups + 1> /*rad_boundaries*/,
+AMREX_GPU_HOST_DEVICE auto RadSystem<TallBoxSfFuv>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, n_groups + 1> rad_boundaries,
 											 const double /*rho*/, const double /*Tgas*/)
     -> amrex::GpuArray<amrex::GpuArray<double, n_groups + 1>, 2>
 {
+	// Piecewise power law in photon energy through the opacities at the group boundaries. For each group, the exponent is the
+	// slope between its two boundaries and the value is the opacity at its lower boundary; the last entry holds the opacity at
+	// the upper boundary of the last group.
 	// kappa_dust has no device storage, so copy it to a local before indexing it with a runtime index
-	const amrex::GpuArray<double, n_groups> kappa = kappa_dust;
+	const amrex::GpuArray<double, n_groups + 1> kappa = kappa_dust;
 	amrex::GpuArray<amrex::GpuArray<double, n_groups + 1>, 2> exponents_and_values{};
-	for (int i = 0; i < n_groups + 1; ++i) {
-		exponents_and_values[0][i] = 0.0;
-		exponents_and_values[1][i] = kappa[std::min(i, n_groups - 1)];
+	for (int g = 0; g < n_groups; ++g) {
+		exponents_and_values[0][g] = std::log(kappa[g + 1] / kappa[g]) / std::log(rad_boundaries[g + 1] / rad_boundaries[g]);
+		exponents_and_values[1][g] = kappa[g];
 	}
+	exponents_and_values[0][n_groups] = 0.0;
+	exponents_and_values[1][n_groups] = kappa[n_groups];
 	return exponents_and_values;
 }
 
