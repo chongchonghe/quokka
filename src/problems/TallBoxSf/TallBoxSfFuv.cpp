@@ -528,19 +528,6 @@ AMRSimulation<TallBoxSfFuv>::setCustomBoundaryConditions(const amrex::IntVect &i
 	// Apply diode boundary conditions in z-direction (direction 2)
 	setDiodeBCLo<2>(iv, consVar, geom);
 	setDiodeBCHi<2>(iv, consVar, geom);
-
-	// The diode BC fills only the hydro variables. Fill the radiation variables with a zero-gradient outflow
-	// boundary: copy them from the nearest interior cell.
-	auto const [i, j, k] = iv.dim3();
-	const int k_lo = geom.Domain().smallEnd(2);
-	const int k_hi = geom.Domain().bigEnd(2);
-	if (k < k_lo || k > k_hi) {
-		const int k_interior = (k < k_lo) ? k_lo : k_hi;
-		for (int n = RadSystem<TallBoxSfFuv>::radEnergy_index;
-		     n < RadSystem<TallBoxSfFuv>::radEnergy_index + Physics_NumVars::numRadVarsPerGroup * n_groups; ++n) {
-			consVar(i, j, k, n) = consVar(i, j, k_interior, n);
-		}
-	}
 }
 
 // Print the total radiation energy of each group, the total stellar luminosity of each group, and the number of radiating stars
