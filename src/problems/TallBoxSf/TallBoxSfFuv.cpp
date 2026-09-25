@@ -38,8 +38,8 @@ constexpr double mu = 1.0 * C::m_p;
 
 constexpr int n_groups = 2; // FUV and LW
 // Dust absorption opacity at the group boundaries 6, 11.2 and 13.6 eV, from the Milky Way R_V = 3.1 model of Weingartner & Draine
-// (2001), renormalized following Draine (2003) (file kext_albedo_WD_MW_3.1_60_D03.all). We take the table row nearest to each
-// boundary, without interpolation:
+// (2001), renormalized following Draine (2003) (file https://www.astro.princeton.edu/~draine/dust/extcurvs/kext_albedo_WD_MW_3.1_60_D03.all). 
+// We take the table row nearest to each boundary, without interpolation:
 //
 //   lambda (micron)  albedo   <cos>  C_ext/H    K_abs     <cos^2>
 //   2.08930E-01     0.5082  0.5644 1.275E-21 4.486E+04 0.58806    (6 eV: lambda = 0.2066 micron)
