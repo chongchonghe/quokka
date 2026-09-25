@@ -102,9 +102,13 @@ statistics_interval = 512
 #	"true_cold_scalar0_z_outflow_rate"
 #]
 #
-#plottime_interval = "10*Myr"
+## plotfiles: the hydro state variables and the (cooling-table) temperature only
+#quokka.diagnostics = ["plt", "slice_x", "slice_z", "proj"]
 #
-#quokka.diagnostics = ["slice_x", "slice_z", "proj"]
+#quokka.plt.type = "PlotFile"
+#quokka.plt.file = "plt"
+#quokka.plt.time_int = "10*Myr"
+#quokka.plt.field_names = ["gasDensity", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "gasInternalEnergy", "gasEnergy", "temperature"]
 #
 #quokka.slice_x.type = "DiagFramePlane"
 #quokka.slice_x.file = "slicex_plt"
