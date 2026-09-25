@@ -108,13 +108,14 @@ derived_vars = [
 	"true_cold_scalar0_z_outflow_rate"
 ]
 
-# plotfiles: the hydro state variables and the (cooling-table) temperature only
+# plotfiles: the hydro state variables, the (cooling-table) temperature, the metal scalar and the radiation energy of each group
 quokka.diagnostics = ["plt", "slice_x", "slice_z", "proj"]
 
 quokka.plt.type = "PlotFile"
 quokka.plt.file = "plt"
 quokka.plt.time_int = "10*Myr"
-quokka.plt.field_names = ["gasDensity", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "gasInternalEnergy", "gasEnergy", "temperature"]
+quokka.plt.field_names = ["gasDensity", "x-GasMomentum", "y-GasMomentum", "z-GasMomentum", "gasInternalEnergy", "gasEnergy", "temperature",
+	"scalar_0", "radEnergy-Group0", "radEnergy-Group1"]
 
 quokka.slice_x.type = "DiagFramePlane"
 quokka.slice_x.file = "slicex_plt"
