@@ -4,7 +4,8 @@
 /// Same problem as testTallBoxSf.cpp, with two radiation groups: FUV (6-11.2 eV) and LW (11.2-13.6 eV).
 /// StochasticStellarPop particles radiate with luminosities interpolated from a slug2 table
 /// (particles.rad_table, e.g. src/problems/TallBoxSf/slug-fuv.csv). Both groups are dust-absorption-only
-/// bands: dust absorbs them and they push on the gas, but they do not heat the gas thermally.
+/// bands: dust absorbs them and they push on the gas, but they do not heat the gas thermally. Both bands drive
+/// cell-by-cell photoelectric heating with efficiency 0.05.
 ///
 /// The intended use is to restart a hydro-only TallBoxSf checkpoint (restartfile=<chk>). The radiation
 /// variables are then set to the floor and the particle luminosities to zero; the luminosity table fills
@@ -94,9 +95,11 @@ template <> struct RadSystem_Traits<TallBoxSfFuv> {
 	static constexpr amrex::GpuArray<double, n_groups + 1> radBoundaries = {6.0, 11.2, 13.6}; // eV
 	static constexpr int beta_order = 1;
 	static constexpr OpacityModel opacity_model = OpacityModel::piecewise_constant_opacity;
-	// dust absorbs the bands and they exert radiation force, but they do not heat the gas; photoelectric heating
-	// stays with use_sfh_based_pe_heating, so pe_heating_efficiency is left at its default of zero
+	// dust absorbs the bands and they exert radiation force, but the absorbed energy does not heat the gas
 	static constexpr bool dust_absorption_only = true;
+	// cell-by-cell photoelectric heating from the local FUV and LW field (Bate & Keto 2015, Eq. 26); this replaces
+	// use_sfh_based_pe_heating, which must be off
+	static constexpr amrex::GpuArray<double, n_groups> pe_heating_efficiency = {0.05, 0.05};
 };
 
 template <>
