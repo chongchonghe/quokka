@@ -48,12 +48,12 @@ constexpr int n_groups = 2; // FUV and LW
 //
 // "K_abs = absorption cross section per mass of dust (cm^2/gram)"
 // "1.653E+02 = M_gas/M_dust for this dust model (assuming He/H=0.096)"
-constexpr double gas_to_dust_mass_ratio = 1.653e2;								  // M_gas / M_dust
-constexpr amrex::GpuArray<double, n_groups + 1> K_abs_dust = {4.486e4, 8.246e4, 1.310e5};			  // cm^2 per g of dust
+constexpr double gas_to_dust_mass_ratio = 1.653e2;					  // M_gas / M_dust
+constexpr amrex::GpuArray<double, n_groups + 1> K_abs_dust = {4.486e4, 8.246e4, 1.310e5}; // cm^2 per g of dust
 constexpr amrex::GpuArray<double, n_groups + 1> kappa_dust = {K_abs_dust.arr[0] / gas_to_dust_mass_ratio, K_abs_dust.arr[1] / gas_to_dust_mass_ratio,
 							      K_abs_dust.arr[2] / gas_to_dust_mass_ratio}; // cm^2 per g of gas
-constexpr double Erad_floor = 1.0e-25;					 // erg cm^-3, ~1e-12 of the Habing field energy density
-constexpr double chat_over_c = 1.0e-2;					 // reduced speed of light
+constexpr double Erad_floor = 1.0e-25; // erg cm^-3, ~1e-12 of the Habing field energy density
+constexpr double chat_over_c = 1.0e-2; // reduced speed of light
 
 struct TallBoxSfFuv {};
 
