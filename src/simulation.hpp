@@ -2879,9 +2879,7 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<problem_t>::setDiodeBCLo(
 					consVar(i, j, k, comp) = consVar(i_interior, j_interior, k_interior, comp);
 				}
 				const int normalFluxComp = radFirst + nRadVars * g + 1 + dir;
-				if (consVar(i, j, k, normalFluxComp) > 0.0) {
-					consVar(i, j, k, normalFluxComp) = 0.0;
-				}
+				consVar(i, j, k, normalFluxComp) = std::min(consVar(i, j, k, normalFluxComp), 0.0);
 			}
 		}
 	}
@@ -3018,9 +3016,7 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<problem_t>::setDiodeBCHi(
 					consVar(i, j, k, comp) = consVar(i_interior, j_interior, k_interior, comp);
 				}
 				const int normalFluxComp = radFirst + nRadVars * g + 1 + dir;
-				if (consVar(i, j, k, normalFluxComp) < 0.0) {
-					consVar(i, j, k, normalFluxComp) = 0.0;
-				}
+				consVar(i, j, k, normalFluxComp) = std::max(consVar(i, j, k, normalFluxComp), 0.0);
 			}
 		}
 	}
