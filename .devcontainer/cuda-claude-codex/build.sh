@@ -51,7 +51,7 @@ esac
 image=$REGISTRY/quokka-linux-$platform-cuda-claude-codex:latest
 
 build() {
-    docker build --platform "$platform" -t "$image" -f "$dockerfile" .
+    docker build --platform "linux/$platform" -t "$image" -f "$dockerfile" .
 }
 
 push() {

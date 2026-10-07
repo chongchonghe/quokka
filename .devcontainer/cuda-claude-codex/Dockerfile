@@ -67,7 +67,7 @@ WORKDIR /home/ubuntu
 
 # Install Claude CLI for the default non-root user.
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
-    npm install -g @openai/codex
+    npm install -g --prefix ~/.local @openai/codex
 
 ENV PATH="/home/ubuntu/.local/bin:/home/ubuntu/.claude/local:/home/ubuntu/superpowers/quokka/bin:${PATH}" \
     PIP_BREAK_SYSTEM_PACKAGES=1
