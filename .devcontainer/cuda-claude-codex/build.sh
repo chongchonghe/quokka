@@ -6,7 +6,7 @@ set -euo pipefail
 export DOCKER_BUILDKIT=1
 
 IMAGE=ghcr.io/chongchonghe/quokka-linux-amd64-cuda-claude-codex:latest
-PLATFORM=linux/amd64
+PLATFORM=amd64
 DOCKERFILE=./Dockerfile
 
 usage() {
