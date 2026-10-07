@@ -43,8 +43,7 @@
 
 using amrex::Real;
 
-struct Vortex {
-}; // dummy type to allow compile-type polymorphism via template specialization
+struct Vortex {}; // dummy type to allow compile-type polymorphism via template specialization
 
 template <> struct quokka::EOS_Traits<Vortex> {
 	static constexpr double gamma = 1.4;
@@ -101,7 +100,8 @@ template <> void QuokkaSimulation<Vortex>::setInitialConditionsOnGrid(quokka::gr
 		Real const ymom = rho * v;
 		Real const zmom = rho * w;
 		Real const Eint = quokka::EOS<Vortex>::ComputeEintFromPres(rho, P);
-		Real const Egas = RadSystem<Vortex>::ComputeEgasFromEint(rho, xmom, ymom, zmom, Eint);
+		static_assert(!Physics_Traits<Vortex>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		Real const Egas = quokka::EOS<Vortex>::ComputeEgasFromEint(rho, xmom, ymom, zmom, Eint, 0.0);
 		Real const scalar = ::s0[0];
 
 		state_cc(i, j, k, HydroSystem<Vortex>::density_index) = rho;

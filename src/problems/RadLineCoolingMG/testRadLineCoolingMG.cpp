@@ -22,8 +22,7 @@
 
 static constexpr bool export_csv = true;
 
-struct CoolingProblemMG {
-}; // dummy type to allow compile-type polymorphism via template specialization
+struct CoolingProblemMG {}; // dummy type to allow compile-type polymorphism via template specialization
 
 constexpr int n_groups_ = 4;
 constexpr amrex::GpuArray<double, 5> rad_boundaries_ = {1.00000000e-03, 1.77827941e-02, 3.16227766e-01, 5.62341325e+00, 1.00000000e+02};
@@ -87,6 +86,8 @@ template <> struct ISM_Traits<CoolingProblemMG> {
 	static constexpr bool enable_dust_gas_thermal_coupling_model = true;
 	static constexpr double gas_dust_coupling_threshold = 1.0e-6;
 	static constexpr bool enable_photoelectric_heating = true;
+	static constexpr bool thermal_band_photochemistry = false;   // no photochemistry network in this problem
+	static constexpr bool dust_chemical_band_absorption = false; // no chemical bands in this problem
 };
 
 template <>
@@ -174,7 +175,8 @@ template <> void QuokkaSimulation<CoolingProblemMG>::computeAfterTimestep()
 		const amrex::Real x2GasMom = values.at(RadSystem<CoolingProblemMG>::x2GasMomentum_index)[0];
 		const amrex::Real x3GasMom = values.at(RadSystem<CoolingProblemMG>::x3GasMomentum_index)[0];
 		const amrex::Real rho = values.at(RadSystem<CoolingProblemMG>::gasDensity_index)[0];
-		const amrex::Real Egas_i = RadSystem<CoolingProblemMG>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i);
+		static_assert(!Physics_Traits<CoolingProblemMG>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		const amrex::Real Egas_i = quokka::EOS<CoolingProblemMG>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i, 0.0);
 		userData_.Tgas_vec_.push_back(quokka::EOS<CoolingProblemMG>::ComputeTgasFromEint(rho, Egas_i));
 		const double Erad_line_i = values.at(RadSystem<CoolingProblemMG>::radEnergy_index + Physics_NumVars::numRadVarsPerGroup * line_index)[0];
 		userData_.Erad_line_vec_.push_back(Erad_line_i);

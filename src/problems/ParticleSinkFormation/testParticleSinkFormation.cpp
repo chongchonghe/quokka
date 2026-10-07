@@ -22,8 +22,7 @@
 #include "util/matplotlibcpp.h"
 #endif
 
-struct SinkProblem {
-};
+struct SinkProblem {};
 
 constexpr double M_sol = C::M_solar;
 constexpr double mu = 1.0 * C::m_p;
@@ -35,7 +34,7 @@ const double year = 3.15576e+07;			// in seconds
 const double cs = std::sqrt(gamma_ * C::k_B * T0 / mu); // NOLINT
 constexpr double B0 = 1.0e-7;				// uniform background field
 
-template <> struct Particle_Traits<SinkProblem> {
+template <> struct Particle_Traits<SinkProblem> : DefaultParticleTraits {
 	// static constexpr ParticleSwitch particle_switch = ParticleSwitch::None;
 	static constexpr ParticleSwitch particle_switch = ParticleSwitch::Sink;
 };

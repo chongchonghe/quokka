@@ -11,8 +11,7 @@
 #include "QuokkaSimulation.hpp"
 #include "hydro/hydro_system.hpp"
 
-struct TestParticle {
-};
+struct TestParticle {};
 
 constexpr double rho0 = 1.0e-5;
 constexpr double dt_ = 0.001;
@@ -38,7 +37,7 @@ enum class TestEnum : unsigned int {
 	MISTAKE = 0b00000100U,
 };
 
-template <> struct Particle_Traits<TestParticle> {
+template <> struct Particle_Traits<TestParticle> : DefaultParticleTraits {
 	// The following will cause a compile error
 	// static constexpr int particle_switch = 1;
 	// static constexpr TestEnum particle_switch = TestEnum::MISTAKE;

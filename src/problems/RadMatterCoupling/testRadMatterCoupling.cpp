@@ -20,8 +20,7 @@
 #include "util/BC.hpp"
 #include "util/fextract.hpp"
 
-struct CouplingProblem {
-}; // dummy type to allow compile-type polymorphism via template specialization
+struct CouplingProblem {}; // dummy type to allow compile-type polymorphism via template specialization
 
 // Su & Olson (1997) test problem
 constexpr double eps_SuOlson = 1.0;
@@ -130,7 +129,8 @@ template <> void QuokkaSimulation<CouplingProblem>::computeAfterTimestep()
 		const amrex::Real x2GasMom = values.at(RadSystem<CouplingProblem>::x2GasMomentum_index)[0];
 		const amrex::Real x3GasMom = values.at(RadSystem<CouplingProblem>::x3GasMomentum_index)[0];
 		const amrex::Real rho = values.at(RadSystem<CouplingProblem>::gasDensity_index)[0];
-		const amrex::Real Egas_i = RadSystem<CouplingProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i);
+		static_assert(!Physics_Traits<CouplingProblem>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		const amrex::Real Egas_i = quokka::EOS<CouplingProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i, 0.0);
 
 		const amrex::Real Erad_i = values.at(RadSystem<CouplingProblem>::radEnergy_index)[0];
 

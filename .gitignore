@@ -29,6 +29,9 @@ Backtrace.*
 /extern/agora_data/vcirc.dat
 /extern/agora_data/AgoraGalaxy_particles_LOW.txt
 
+# Local source data for chemical yield preprocessing
+/extern/mist_tracks/
+
 # Singularity Docker images
 *.sif
 
@@ -38,7 +41,9 @@ Backtrace.*
 # !/tests/ascent_actions.yaml
 
 # agent files
-/.claude
+/.claude/*
+!/.claude/settings.json
+!/.claude/rules/
 /.agent
 /.agents
 
@@ -68,6 +73,7 @@ Backtrace.*
 # Documentation build directory
 docs/api/
 docs/doxyoutput/
+docs/.mdbook-plantuml-cache/
 _build/
 
 # Include image and pdf files inside docs

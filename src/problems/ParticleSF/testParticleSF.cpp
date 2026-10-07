@@ -17,8 +17,7 @@
 #include "hydro/hydro_system.hpp"
 #include "particles/particle_types.hpp"
 
-struct ParticleSFProblem {
-};
+struct ParticleSFProblem {};
 
 constexpr Real mu = 1.0 * C::m_p;
 constexpr Real gamma_ = 5. / 3.;
@@ -27,7 +26,7 @@ static Real n0 = 1.0e4;			       // NOLINT
 static Real Tamb = 10.0;		       // NOLINT
 static bool validate_initial_imf_stats = true; // NOLINT
 
-template <> struct Particle_Traits<ParticleSFProblem> {
+template <> struct Particle_Traits<ParticleSFProblem> : DefaultParticleTraits {
 	// static constexpr ParticleSwitch particle_switch = ParticleSwitch::None;
 	static constexpr ParticleSwitch particle_switch = ParticleSwitch::StochasticStellarPop;
 };
@@ -35,6 +34,7 @@ template <> struct Particle_Traits<ParticleSFProblem> {
 template <> struct quokka::EOS_Traits<ParticleSFProblem> {
 	static constexpr double gamma = gamma_;
 	static constexpr double mean_molecular_weight = mu;
+	using EOSBackend = quokka::EOSTabulated<ParticleSFProblem>;
 };
 
 template <> struct HydroSystem_Traits<ParticleSFProblem> {

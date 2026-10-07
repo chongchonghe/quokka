@@ -23,15 +23,14 @@ struct GlobalConfig {
 int GlobalConfig::num_particles = 1000;
 int GlobalConfig::seed = 42;
 
-struct CollapseProblem {
-};
+struct CollapseProblem {};
 
 template <> struct quokka::EOS_Traits<CollapseProblem> {
 	static constexpr double gamma = 5. / 3.;
 	static constexpr double mean_molecular_weight = C::m_u;
 };
 
-template <> struct Particle_Traits<CollapseProblem> {
+template <> struct Particle_Traits<CollapseProblem> : DefaultParticleTraits {
 	static constexpr ParticleSwitch particle_switch = ParticleSwitch::CIC;
 };
 

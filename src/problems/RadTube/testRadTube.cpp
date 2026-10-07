@@ -30,8 +30,7 @@
 #endif
 #include "util/BC.hpp"
 
-struct TubeProblem {
-};
+struct TubeProblem {};
 
 constexpr double kappa0 = 100.;	     // cm^2 g^-1
 constexpr double mu = 2.33 * C::m_u; // g
@@ -316,10 +315,13 @@ auto problem_main() -> int
 		double const x2GasMom = values.at(RadSystem<TubeProblem>::x2GasMomentum_index)[i];
 		double const x3GasMom = values.at(RadSystem<TubeProblem>::x3GasMomentum_index)[i];
 
-		double const Eint_exact = RadSystem<TubeProblem>::ComputeEintFromEgas(rho_exact, x1GasMom_exact, x2GasMom_exact, x3GasMom_exact, Egas_exact);
+		static_assert(!Physics_Traits<TubeProblem>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		double const Eint_exact =
+		    quokka::EOS<TubeProblem>::ComputeEintFromEgas(rho_exact, x1GasMom_exact, x2GasMom_exact, x3GasMom_exact, Egas_exact, 0.0);
 		double const Tgas_exact = quokka::EOS<TubeProblem>::ComputeTgasFromEint(rho_exact, Eint_exact);
 
-		double const Eint = RadSystem<TubeProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Egas);
+		static_assert(!Physics_Traits<TubeProblem>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		double const Eint = quokka::EOS<TubeProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Egas, 0.0);
 		double const Tgas = quokka::EOS<TubeProblem>::ComputeTgasFromEint(rho, Eint);
 
 		Tgas_arr[i] = Tgas;

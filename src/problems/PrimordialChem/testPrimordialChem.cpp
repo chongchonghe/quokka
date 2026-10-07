@@ -41,8 +41,7 @@
 
 using amrex::Real;
 
-struct PrimordialChemTest {
-}; // dummy type to allow compile-type polymorphism via template specialization
+struct PrimordialChemTest {}; // dummy type to allow compile-type polymorphism via template specialization
 
 template <> struct Physics_Traits<PrimordialChemTest> : DefaultPhysicsTraits {
 	// cell-centred
@@ -222,7 +221,8 @@ template <> void QuokkaSimulation<PrimordialChemTest>::setInitialConditionsOnGri
 		// Microphysics calculates specific internal energy so multiply it by rho for Quokka
 		Real const Eint = rho * state.e;
 
-		Real const Egas = RadSystem<PrimordialChemTest>::ComputeEgasFromEint(rho, xmom, ymom, zmom, Eint);
+		static_assert(!Physics_Traits<PrimordialChemTest>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		Real const Egas = quokka::EOS<PrimordialChemTest>::ComputeEgasFromEint(rho, xmom, ymom, zmom, Eint, 0.0);
 
 		state_cc(i, j, k, HydroSystem<PrimordialChemTest>::energy_index) = Egas;
 		state_cc(i, j, k, HydroSystem<PrimordialChemTest>::internalEnergy_index) = Eint;

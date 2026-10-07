@@ -17,8 +17,7 @@
 #include <fstream>
 #include <vector>
 
-struct DustProblem {
-}; // dummy type to allow compile-type polymorphism via template specialization
+struct DustProblem {}; // dummy type to allow compile-type polymorphism via template specialization
 
 // In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
 
@@ -60,6 +59,8 @@ template <> struct ISM_Traits<DustProblem> {
 	static constexpr bool enable_dust_gas_thermal_coupling_model = true;
 	static constexpr double gas_dust_coupling_threshold = 1.0e-6;
 	static constexpr bool enable_photoelectric_heating = false;
+	static constexpr bool thermal_band_photochemistry = false;   // no photochemistry network in this problem
+	static constexpr bool dust_chemical_band_absorption = false; // no chemical bands in this problem
 };
 
 template <> struct Physics_Traits<DustProblem> : DefaultPhysicsTraits {
@@ -131,7 +132,8 @@ template <> void QuokkaSimulation<DustProblem>::computeAfterTimestep()
 		const amrex::Real x2GasMom = values.at(RadSystem<DustProblem>::x2GasMomentum_index)[0];
 		const amrex::Real x3GasMom = values.at(RadSystem<DustProblem>::x3GasMomentum_index)[0];
 		const amrex::Real rho = values.at(RadSystem<DustProblem>::gasDensity_index)[0];
-		const amrex::Real Egas_i = RadSystem<DustProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i);
+		static_assert(!Physics_Traits<DustProblem>::is_mhd_enabled, "MHD is enabled; pass magnetic_energy instead of 0.0");
+		const amrex::Real Egas_i = quokka::EOS<DustProblem>::ComputeEintFromEgas(rho, x1GasMom, x2GasMom, x3GasMom, Etot_i, 0.0);
 		const amrex::Real Erad_i = values.at(RadSystem<DustProblem>::radEnergy_index)[0];
 		// userData_.Trad_vec_.push_back(std::pow(Erad_i / a_rad, 1. / 4.));
 		userData_.Trad_vec_.push_back(Erad_i / a_rad);
