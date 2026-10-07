@@ -3,10 +3,15 @@ set -e
 
 export DOCKER_BUILDKIT=1
 
-docker build \
-  -t quokka-cuda-claude:quokka-amd64 \
-  -f ./Dockerfile .
+IMAGE=ghcr.io/chongchonghe/quokka-linux-amd64-cuda-claude-codex
 
 docker build \
-  -t quokka-cuda-claude:arm64 \
-  -f ./Dockerfile.arm64 .
+  --platform linux/amd64 \
+  -t "${IMAGE}:latest" \
+  -f ./Dockerfile .
+
+docker push "${IMAGE}:latest"
+
+# docker build \
+#   -t quokka-cuda-claude:arm64 \
+#   -f ./Dockerfile.arm64 .
