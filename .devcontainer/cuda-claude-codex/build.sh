@@ -5,52 +5,66 @@ set -euo pipefail
 
 export DOCKER_BUILDKIT=1
 
-IMAGE=ghcr.io/chongchonghe/quokka-linux-amd64-cuda-claude-codex:latest
-PLATFORM=amd64
-DOCKERFILE=./Dockerfile
+REGISTRY=ghcr.io/chongchonghe
+DEFAULT_PLATFORM=amd64
 
 usage() {
     cat <<EOF
-Usage: $(basename "$0") [-h] [build|push|delete]
+Usage: $(basename "$0") [-h] [--platform amd64|arm64] [build|push|delete]
 
-With no argument, build the image and push it to GitHub Packages.
+With no command, build the image and push it to GitHub Packages.
 
 Commands:
-  build         Build the image locally, do not push
-  push          Push the already-built image
-  delete        Delete the image from the local computer
-  -h, --help    Show this message and exit
+  build                  Build the image locally, do not push
+  push                   Push the already-built image
+  delete                 Delete the image from the local computer
 
-Image: $IMAGE
+Options:
+  --platform PLATFORM    amd64 (default, uses Dockerfile) or arm64 (uses Dockerfile.arm64)
+  -h, --help             Show this message and exit
+
+Images: $REGISTRY/quokka-linux-<platform>-cuda-claude-codex:latest
 EOF
 }
 
+platform=$DEFAULT_PLATFORM
+command=all
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --platform)
+            [[ $# -ge 2 ]] || { echo "error: --platform needs a value" >&2; usage >&2; exit 1; }
+            platform=$2; shift 2 ;;
+        --platform=*) platform=${1#--platform=}; shift ;;
+        build|push|delete) command=$1; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "error: unknown argument '$1'" >&2; usage >&2; exit 1 ;;
+    esac
+done
+
+case "$platform" in
+    amd64) dockerfile=./Dockerfile ;;
+    arm64) dockerfile=./Dockerfile.arm64 ;;
+    *) echo "error: unknown platform '$platform'" >&2; usage >&2; exit 1 ;;
+esac
+
+image=$REGISTRY/quokka-linux-$platform-cuda-claude-codex:latest
+
 build() {
-    docker build --platform "$PLATFORM" -t "$IMAGE" -f "$DOCKERFILE" .
+    docker build --platform "$platform" -t "$image" -f "$dockerfile" .
 }
 
 push() {
-    docker push "$IMAGE"
+    docker push "$image"
 }
 
 delete() {
-    docker rmi "$IMAGE"
+    docker rmi "$image"
 }
 
-if [[ $# -gt 1 ]]; then
-    usage >&2
-    exit 1
-fi
-
-case "${1:-all}" in
+case "$command" in
     all) build; push ;;
     build) build ;;
     push) push ;;
     delete) delete ;;
-    -h|--help) usage ;;
-    *) echo "error: unknown command '$1'" >&2; usage >&2; exit 1 ;;
 esac
-
-# docker build \
-#   -t quokka-cuda-claude:arm64 \
-#   -f ./Dockerfile.arm64 .
